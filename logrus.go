@@ -1,6 +1,8 @@
 package slogx
 
 /*
+// TODO: intercept "logrus" package messages
+
 // InitLogrusInterceptor initializes the logrus global logger with an expected format so that they can be
 // intercepted and parsed by ParseLogrusMessages.
 func (l *Logger) InterceptLogrusMessages(writer *io.PipeWriter) {
@@ -62,7 +64,7 @@ type logrusMessage struct {
 	Level   string                 `json:"level"`
 	Message string                 `json:"msg"`
 	Method  string                 `json:"func"`
-	Data    map[string]interface{} `json:"data"`
+	Data    map[string]any `json:"data"`
 }
 
 // loggerLevelToLoggerLevel converts our logger logging levels to logrus logging levels.
