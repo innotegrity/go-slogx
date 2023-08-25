@@ -1,4 +1,4 @@
-package multi
+package handlers
 
 import (
 	"context"
@@ -30,6 +30,7 @@ type MultiHandlerOptions struct {
 
 // multiHandler sends the log message to multiple handlers.
 type multiHandler struct {
+	// unexported variables
 	futures  []async.Future
 	handlers []slog.Handler
 	options  MultiHandlerOptions

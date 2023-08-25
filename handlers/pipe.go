@@ -1,4 +1,4 @@
-package multi
+package handlers
 
 import (
 	"context"
@@ -24,6 +24,7 @@ type PipeHandlerOptions struct {
 
 // pipeHandler is a handler which sends the record through one or more functions before passing it onto the next handler.
 type pipeHandler struct {
+	// unexported variables
 	next    slog.Handler
 	options PipeHandlerOptions
 }

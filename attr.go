@@ -54,7 +54,7 @@ func ErrX(key string, value errorx.Error) slog.Attr {
 	// add nested errors
 	nestedErrs := []any{}
 	for i, ne := range value.NestedErrors() {
-		nestedErrs = append(nestedErrs, ErrX(fmt.Sprintf("%d", i+1), ne))
+		nestedErrs = append(nestedErrs, ErrX(fmt.Sprintf("%03d", i+1), ne))
 	}
 	if len(nestedErrs) > 0 {
 		attrs = append(attrs, slog.Group("nested_errors", nestedErrs...))
