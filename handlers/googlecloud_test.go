@@ -10,29 +10,25 @@ import (
 
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/formatters"
 	"go.innotegrity.dev/slogx/handlers"
 	"golang.org/x/exp/slog"
 )
 
-func TestSlack1(t *testing.T) {
-	slackFormatterOptions := formatters.DefaultSlackMessageFormatterOptions()
-	slackFormatterOptions.ApplicationName = "slogx"
-	slackFormatterOptions.ApplicationIconURL = "https://d1nhio0ox7pgb.cloudfront.net/_img/v_collection_png/512x512/shadow/log.png"
-	slackFormatterOptions.IncludeSource = true
-	slackFormatter := formatters.NewSlackMessageFormatter(slackFormatterOptions)
-	slackHandler, err := handlers.NewSlackHandler(handlers.SlackHandlerOptions{
-		EnableAsync:     true,
-		Level:           slogx.LevelTrace,
-		RecordFormatter: slackFormatter,
-		WebhookURL:      os.Getenv("SLOGX_SLACK_WEBHOOK_URL"),
+func TestGoogleCloudLogging1(t *testing.T) {
+	t.Log("setting up")
+	handler, err := handlers.NewGoogleCloudLoggingHandler(handlers.GoogleCloudLoggingHandlerOptions{
+		EnableAsync: true,
+		Level:       slogx.LevelTrace,
+		LogName:     "slogx-test",
+		ProjectID:   os.Getenv("SLOGX_GCP_LOGGING_PROJECT_ID"),
 	})
 	if err != nil {
-		t.Errorf("failed to create Slack Handler: %s", err.Error())
+		t.Errorf("failed to create Google Cloud Logging Handler: %s", err.Error())
 		return
 	}
-	logger := slogx.Wrap(slog.New(slackHandler))
+	logger := slogx.Wrap(slog.New(handler))
 	defer logger.Shutdown(true)
+	t.Log("setup complete")
 
 	logger.Trace("this is a trace message")
 	logger.Debug("this is a debug message")

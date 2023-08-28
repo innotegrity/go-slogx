@@ -4,34 +4,25 @@ package handlers_test
 
 import (
 	"errors"
-	"os"
 	"testing"
 	"time"
 
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/formatters"
 	"go.innotegrity.dev/slogx/handlers"
 	"golang.org/x/exp/slog"
 )
 
-func TestSlack1(t *testing.T) {
-	slackFormatterOptions := formatters.DefaultSlackMessageFormatterOptions()
-	slackFormatterOptions.ApplicationName = "slogx"
-	slackFormatterOptions.ApplicationIconURL = "https://d1nhio0ox7pgb.cloudfront.net/_img/v_collection_png/512x512/shadow/log.png"
-	slackFormatterOptions.IncludeSource = true
-	slackFormatter := formatters.NewSlackMessageFormatter(slackFormatterOptions)
-	slackHandler, err := handlers.NewSlackHandler(handlers.SlackHandlerOptions{
-		EnableAsync:     true,
-		Level:           slogx.LevelTrace,
-		RecordFormatter: slackFormatter,
-		WebhookURL:      os.Getenv("SLOGX_SLACK_WEBHOOK_URL"),
+func TestFluentBit1(t *testing.T) {
+	handler, err := handlers.NewFluentBitHandler(handlers.FluentBitHandlerOptions{
+		Level: slogx.LevelTrace,
+		URL:   "http://localhost:8888",
 	})
 	if err != nil {
-		t.Errorf("failed to create Slack Handler: %s", err.Error())
+		t.Errorf("failed to create Fluent Bit Handler: %s", err.Error())
 		return
 	}
-	logger := slogx.Wrap(slog.New(slackHandler))
+	logger := slogx.Wrap(slog.New(handler))
 	defer logger.Shutdown(true)
 
 	logger.Trace("this is a trace message")

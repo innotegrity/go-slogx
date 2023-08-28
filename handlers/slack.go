@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/slack-go/slack"
@@ -20,8 +19,7 @@ type SlackHandlerOptionsContext struct{}
 
 // SlackHandlerOptions holds the options for the Slack handler.
 type SlackHandlerOptions struct {
-	// EnableAsync will execute the Handle() function in a separate goroutine in case there are time-consuming
-	// conditions which must be evaluated before determining which handler(s) to use for writing the record.
+	// EnableAsync will execute the Handle() function in a separate goroutine.
 	//
 	// When async is enabled, you should be sure to call the Shutdown() function or use the slogx.Shutdown()
 	// function to ensure all goroutines are finished and any pending records have been written.
@@ -39,10 +37,12 @@ type SlackHandlerOptions struct {
 
 	// RecordFormatter specifies the formatter to use to format the record before sending it to Slack.
 	//
-	// If no formatter is supplied, DefaultFormatter is used to format the output.
+	// If no formatter is supplied, formatters.DefaultSlackMessageFormatter is used to format the output.
 	RecordFormatter formatters.SlackMessageFormatter
 
 	// WebhookURL is the Slack webhook URL to use in order to send the message.
+	//
+	// This is a required option.
 	WebhookURL string
 }
 
@@ -84,7 +84,7 @@ func (h slackHandler) Enabled(ctx context.Context, level slog.Level) bool {
 	return level >= h.options.Level.Level()
 }
 
-// Handle actually handles writing the record to the output writer.
+// Handle actually handles posting the record to the Slack webhook.
 //
 // Any attributes duplicated between the handler and record, including within groups, are automaticlaly removed.
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
@@ -114,9 +114,10 @@ func (h slackHandler) Shutdown(continueOnError bool) error {
 // WithAttrs creates a new handler from the existing one adding the given attributes to it.
 func (h slackHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newHandler := &slackHandler{
-		options: h.options,
 		attrs:   h.attrs,
+		futures: h.futures,
 		groups:  h.groups,
+		options: h.options,
 	}
 	if h.activeGroup == "" {
 		newHandler.attrs = append(newHandler.attrs, attrs...)
@@ -130,9 +131,10 @@ func (h slackHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // WithGroup creates a new handler from the existing one adding the given group to it.
 func (h slackHandler) WithGroup(name string) slog.Handler {
 	newHandler := &slackHandler{
-		options: h.options,
 		attrs:   h.attrs,
+		futures: h.futures,
 		groups:  h.groups,
+		options: h.options,
 	}
 	if name != "" {
 		newHandler.groups = append(newHandler.groups, name)
@@ -160,8 +162,5 @@ func (h slackHandler) handle(ctx context.Context, r slog.Record) error {
 	}
 
 	// send the message to Slack
-	if err := slack.PostWebhookCustomHTTP(h.options.WebhookURL, h.options.HTTPClient, message); err != nil {
-		fmt.Println(err)
-	}
-	return nil
+	return slack.PostWebhookCustomHTTP(h.options.WebhookURL, h.options.HTTPClient, message)
 }

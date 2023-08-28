@@ -1,39 +1,28 @@
 package handlers_test
 
-// TODO: implement testing and benchmarks
-
 import (
 	"errors"
-	"os"
 	"testing"
 	"time"
 
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/formatters"
 	"go.innotegrity.dev/slogx/handlers"
 	"golang.org/x/exp/slog"
 )
 
-func TestSlack1(t *testing.T) {
-	slackFormatterOptions := formatters.DefaultSlackMessageFormatterOptions()
-	slackFormatterOptions.ApplicationName = "slogx"
-	slackFormatterOptions.ApplicationIconURL = "https://d1nhio0ox7pgb.cloudfront.net/_img/v_collection_png/512x512/shadow/log.png"
-	slackFormatterOptions.IncludeSource = true
-	slackFormatter := formatters.NewSlackMessageFormatter(slackFormatterOptions)
-	slackHandler, err := handlers.NewSlackHandler(handlers.SlackHandlerOptions{
-		EnableAsync:     true,
-		Level:           slogx.LevelTrace,
-		RecordFormatter: slackFormatter,
-		WebhookURL:      os.Getenv("SLOGX_SLACK_WEBHOOK_URL"),
+func TestFile1(t *testing.T) {
+	fileHandler, err := handlers.NewFileHandler(handlers.FileHandlerOptions{
+		Filename:    "test.log",
+		Level:       slogx.LevelTrace,
+		MaxFileSize: 100000,
 	})
 	if err != nil {
-		t.Errorf("failed to create Slack Handler: %s", err.Error())
+		t.Errorf("failed to create File Handler: %s", err.Error())
 		return
 	}
-	logger := slogx.Wrap(slog.New(slackHandler))
+	logger := slogx.Wrap(slog.New(fileHandler))
 	defer logger.Shutdown(true)
-
 	logger.Trace("this is a trace message")
 	logger.Debug("this is a debug message")
 	logger.Info("this is an info message")
@@ -97,5 +86,4 @@ func TestSlack1(t *testing.T) {
 			slog.String("email", "josh@josh.com"),
 		),
 	)
-
 }

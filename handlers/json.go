@@ -26,7 +26,7 @@ type JSONHandlerOptions struct {
 
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
-	// If no formatter is supplied, middleware.DefaultJSONFormatter is used to format the output.
+	// If no formatter is supplied, formatters.DefaultJSONFormatter is used to format the output.
 	RecordFormatter formatters.BufferFormatter
 
 	// Writer is where to write the output to.
@@ -110,9 +110,9 @@ func (h jsonHandler) Shutdown(continueOnError bool) error {
 // WithAttrs creates a new handler from the existing one adding the given attributes to it.
 func (h jsonHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newHandler := &jsonHandler{
-		options:   h.options,
 		attrs:     h.attrs,
 		groups:    h.groups,
+		options:   h.options,
 		writeLock: h.writeLock,
 	}
 	if h.activeGroup == "" {
@@ -127,9 +127,9 @@ func (h jsonHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 // WithGroup creates a new handler from the existing one adding the given group to it.
 func (h *jsonHandler) WithGroup(name string) slog.Handler {
 	newHandler := &jsonHandler{
-		options:   h.options,
 		attrs:     h.attrs,
 		groups:    h.groups,
+		options:   h.options,
 		writeLock: h.writeLock,
 	}
 	if name != "" {

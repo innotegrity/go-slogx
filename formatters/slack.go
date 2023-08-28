@@ -116,7 +116,6 @@ type SlackMessageFormatterOptions struct {
 // DefaultSlackMessageFormatterOptions returns a default set of options for the Slack message formatter.
 func DefaultSlackMessageFormatterOptions() SlackMessageFormatterOptions {
 	return SlackMessageFormatterOptions{
-		AttrFormatter:         formatSlackMessageAttrDefault,
 		IgnoreAttrs:           []string{},
 		IncludeAttrs:          true,
 		LevelFormatter:        formatSlackMessageLevelDefault,
@@ -322,41 +321,33 @@ func (f slackMessageFormatter) attrToElement(ctx context.Context, level slog.Lev
 	}
 	switch formattedValue.Kind() {
 	case slog.KindBool:
-		element.Text = fmt.Sprintf("%s: %t", formattedKey, formattedValue.Bool())
+		element.Text = fmt.Sprintf("*%s*: `%t`", formattedKey, formattedValue.Bool())
 	case slog.KindString:
-		element.Text = fmt.Sprintf("%s: %s", formattedKey, formattedValue.String())
+		element.Text = fmt.Sprintf("*%s*: `%s`", formattedKey, formattedValue.String())
 	case slog.KindDuration:
-		element.Text = fmt.Sprintf("%s: %s", formattedKey, formattedValue.Duration().String())
+		element.Text = fmt.Sprintf("*%s*: `%s`", formattedKey, formattedValue.Duration().String())
 	case slog.KindTime:
-		element.Text = fmt.Sprintf("%s: %s", formattedKey, formattedValue.Time().UTC().Format(time.RFC3339))
+		element.Text = fmt.Sprintf("*%s*: `%s`", formattedKey, formattedValue.Time().UTC().Format(time.RFC3339))
 	case slog.KindFloat64:
-		element.Text = fmt.Sprintf("%s: %f", formattedKey, formattedValue.Float64())
+		element.Text = fmt.Sprintf("*%s*: `%f`", formattedKey, formattedValue.Float64())
 	case slog.KindInt64:
-		element.Text = fmt.Sprintf("%s: %d", formattedKey, formattedValue.Int64())
+		element.Text = fmt.Sprintf("*%s*: `%d`", formattedKey, formattedValue.Int64())
 	case slog.KindUint64:
-		element.Text = fmt.Sprintf("%s: %d", formattedKey, formattedValue.Uint64())
+		element.Text = fmt.Sprintf("*%s*: `%d`", formattedKey, formattedValue.Uint64())
 	case slog.KindGroup: // should never occur as the attrs have been flattened
-		element.Text = "error: found a group!?!"
+		element.Text = fmt.Sprintf("*%s*: `%+v`", formattedKey, formattedValue.Group())
 	default:
 		if tm, ok := formattedValue.Any().(encoding.TextMarshaler); ok {
 			output, err := tm.MarshalText()
 			if err != nil {
 				return nil, err
 			}
-			element.Text = fmt.Sprintf("%s: %s", formattedKey, string(output))
+			element.Text = fmt.Sprintf("*%s*: `%s`", formattedKey, string(output))
 		} else {
-			element.Text = fmt.Sprintf("%s: %+v", formattedKey, formattedValue.Any())
+			element.Text = fmt.Sprintf("*%s*: `%+v`", formattedKey, formattedValue.Any())
 		}
 	}
 	return element, nil
-}
-
-// formatSlackMessageAttrDefault returns the attribute key in bold text and the value unchanged.
-func formatSlackMessageAttrDefault(ctx context.Context, level slog.Leveler, group, attrKey string, attrValue slog.Value) (string, slog.Value, error) {
-	if group != "" {
-		return fmt.Sprintf("*%s.%s*", group, attrKey), attrValue, nil
-	}
-	return fmt.Sprintf("*%s*", attrKey), attrValue, nil
 }
 
 // formatSlackMessageLevelDeafult formats the level using an emoji prefix.
