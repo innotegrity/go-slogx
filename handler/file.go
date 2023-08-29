@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"context"
@@ -11,9 +11,7 @@ import (
 
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/formatters"
-	"go.innotegrity.dev/slogx/internal/buffer"
-	"go.innotegrity.dev/slogx/internal/utils"
+	"go.innotegrity.dev/slogx/formatter"
 	"golang.org/x/exp/slog"
 )
 
@@ -57,7 +55,7 @@ type FileHandlerOptions struct {
 	// RecordFormatter specifies the formatter to use to format the record before sending it to Slack.
 	//
 	// If no formatter is supplied, formatters.DefaultJSONFormatter is used to format the output.
-	RecordFormatter formatters.BufferFormatter
+	RecordFormatter formatter.BufferFormatter
 }
 
 // fileHandler is a log handler that writes records to a file.
@@ -117,16 +115,16 @@ func (h fileHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *fileHandler) Handle(ctx context.Context, r slog.Record) error {
 	handlerCtx := context.WithValue(ctx, FileHandlerOptionsContext{}, &h.options)
-	attrs := utils.ConsolidateAttrs(h.attrs, h.activeGroup, r)
+	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer
-	var buf *buffer.Buffer
+	var buf *slogx.Buffer
 	var err error
 	if h.options.RecordFormatter != nil {
 		buf, err = h.options.RecordFormatter.FormatRecord(handlerCtx, r.Time, slogx.Level(r.Level), r.PC, r.Message,
 			attrs)
 	} else {
-		f := formatters.DefaultJSONFormatter()
+		f := formatter.DefaultJSONFormatter()
 		buf, err = f.FormatRecord(handlerCtx, r.Time, slogx.Level(r.Level), r.PC, r.Message, attrs)
 	}
 	if err != nil {
@@ -260,7 +258,7 @@ func (h *fileHandler) rotateFiles() error {
 }
 
 // write handles writing the buffer contents to the file.
-func (h *fileHandler) write(buf *buffer.Buffer) error {
+func (h *fileHandler) write(buf *slogx.Buffer) error {
 	h.writeLock.Lock()
 	defer h.writeLock.Unlock()
 

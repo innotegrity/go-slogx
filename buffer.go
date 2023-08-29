@@ -1,4 +1,4 @@
-package buffer
+package slogx
 
 import (
 	"sync"
@@ -16,7 +16,7 @@ var bufPool = sync.Pool{
 }
 
 // New creates a new buffer.
-func New() *Buffer {
+func NewBuffer() *Buffer {
 	return bufPool.Get().(*Buffer)
 }
 

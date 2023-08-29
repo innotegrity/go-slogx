@@ -1,35 +1,28 @@
-package handlers_test
-
-// TODO: implement testing and benchmarks
+package handler_test
 
 import (
 	"errors"
-	"os"
 	"testing"
 	"time"
 
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/handlers"
+	"go.innotegrity.dev/slogx/handler"
 	"golang.org/x/exp/slog"
 )
 
-func TestGoogleCloudLogging1(t *testing.T) {
-	t.Log("setting up")
-	handler, err := handlers.NewGoogleCloudLoggingHandler(handlers.GoogleCloudLoggingHandlerOptions{
-		EnableAsync: true,
+func TestFile1(t *testing.T) {
+	fileHandler, err := handler.NewFileHandler(handler.FileHandlerOptions{
+		Filename:    "test.log",
 		Level:       slogx.LevelTrace,
-		LogName:     "slogx-test",
-		ProjectID:   os.Getenv("SLOGX_GCP_LOGGING_PROJECT_ID"),
+		MaxFileSize: 100000,
 	})
 	if err != nil {
-		t.Errorf("failed to create Google Cloud Logging Handler: %s", err.Error())
+		t.Errorf("failed to create File Handler: %s", err.Error())
 		return
 	}
-	logger := slogx.Wrap(slog.New(handler))
+	logger := slogx.Wrap(slog.New(fileHandler))
 	defer logger.Shutdown(true)
-	t.Log("setup complete")
-
 	logger.Trace("this is a trace message")
 	logger.Debug("this is a debug message")
 	logger.Info("this is an info message")
@@ -93,5 +86,4 @@ func TestGoogleCloudLogging1(t *testing.T) {
 			slog.String("email", "josh@josh.com"),
 		),
 	)
-
 }

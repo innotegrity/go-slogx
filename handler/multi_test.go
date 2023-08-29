@@ -1,4 +1,4 @@
-package handlers_test
+package handler_test
 
 // TODO: implement testing and benchmarks
 
@@ -12,26 +12,26 @@ import (
 	"github.com/mattn/go-colorable"
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/handlers"
+	"go.innotegrity.dev/slogx/handler"
 	"golang.org/x/exp/slog"
 )
 
 func TestMulti1(t *testing.T) {
 	writer := colorable.NewColorable(os.Stdout)
-	consoleHandler := handlers.NewConsoleHandler(handlers.ConsoleHandlerOptions{
+	consoleHandler := handler.NewConsoleHandler(handler.ConsoleHandlerOptions{
 		Level:           slogx.LevelTrace,
 		RecordFormatter: nil,
 		Writer:          writer,
 	})
-	jsonHandler := handlers.NewJSONHandler(handlers.JSONHandlerOptions{
+	jsonHandler := handler.NewJSONHandler(handler.JSONHandlerOptions{
 		Level:           slogx.LevelTrace,
 		RecordFormatter: nil,
 		Writer:          os.Stdout,
 	})
 	logger := slogx.Wrap(
 		slog.New(
-			handlers.NewMultiHandler(
-				handlers.MultiHandlerOptions{},
+			handler.NewMultiHandler(
+				handler.MultiHandlerOptions{},
 				consoleHandler,
 				jsonHandler,
 			),

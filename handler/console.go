@@ -1,4 +1,4 @@
-package handlers
+package handler
 
 import (
 	"context"
@@ -9,9 +9,7 @@ import (
 	"github.com/mattn/go-colorable"
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/formatters"
-	"go.innotegrity.dev/slogx/internal/buffer"
-	"go.innotegrity.dev/slogx/internal/utils"
+	"go.innotegrity.dev/slogx/formatter"
 	"golang.org/x/exp/slog"
 )
 
@@ -28,7 +26,7 @@ type ConsoleHandlerOptions struct {
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
 	// If no formatter is supplied, a colorized formatters.DefaultConsoleFormatter is used to format the output.
-	RecordFormatter formatters.ColorBufferFormatter
+	RecordFormatter formatter.ColorBufferFormatter
 
 	// Writer is where to write the output to.
 	//
@@ -79,16 +77,16 @@ func (h consoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *consoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	handlerCtx := context.WithValue(ctx, ConsoleHandlerOptionsContext{}, &h.options)
-	attrs := utils.ConsolidateAttrs(h.attrs, h.activeGroup, r)
+	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer
-	var buf *buffer.Buffer
+	var buf *slogx.Buffer
 	var err error
 	if h.options.RecordFormatter != nil {
 		buf, err = h.options.RecordFormatter.FormatRecord(handlerCtx, r.Time, slogx.Level(r.Level), r.PC, r.Message,
 			attrs)
 	} else {
-		f := formatters.DefaultConsoleFormatter(true)
+		f := formatter.DefaultConsoleFormatter(true)
 		buf, err = f.FormatRecord(handlerCtx, r.Time, slogx.Level(r.Level), r.PC, r.Message, attrs)
 	}
 	if err != nil {

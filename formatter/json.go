@@ -1,4 +1,4 @@
-package formatters
+package formatter
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"time"
 
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/internal/buffer"
-	"go.innotegrity.dev/slogx/internal/utils"
 	"golang.org/x/exp/slog"
 )
 
@@ -197,11 +195,11 @@ func NewJSONFormatter(opts JSONFormatterOptions) *jsonFormatter {
 // By default, duration values in attributes are formatted using the String() function and time values are formatted
 // in UTC time using the RFC3339 layout.
 func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, level slogx.Level, pc uintptr,
-	msg string, attrs []slog.Attr) (*buffer.Buffer, error) {
+	msg string, attrs []slog.Attr) (*slogx.Buffer, error) {
 
 	var err error
 	var strVal string
-	buf := buffer.New()
+	buf := slogx.NewBuffer()
 	handlerCtx := context.WithValue(ctx, JSONFormatterOptionsContext{}, &f.options)
 
 	// open the JSON
@@ -265,7 +263,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 
 	// sort attributes, if requested
 	if f.options.SortAttrs {
-		attrs = utils.SortAttrs(attrs)
+		attrs = slogx.SortAttrs(attrs)
 	}
 
 	// loop through and print the attributes
@@ -299,7 +297,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 //
 // By default, duration values in attributes are formatted using the String() function and time values are formatted
 // in UTC time using the RFC3339 layout.
-func (f jsonFormatter) formatAttr(ctx context.Context, buf *buffer.Buffer, level slog.Leveler, group, attrKey string,
+func (f jsonFormatter) formatAttr(ctx context.Context, buf *slogx.Buffer, level slog.Leveler, group, attrKey string,
 	attrValue slog.Value, writeComma bool) error {
 
 	// create the full key path with the group

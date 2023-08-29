@@ -1,4 +1,4 @@
-package formatters
+package formatter
 
 import (
 	"context"
@@ -12,8 +12,6 @@ import (
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/runtimex"
 	"go.innotegrity.dev/slogx"
-	"go.innotegrity.dev/slogx/internal/buffer"
-	"go.innotegrity.dev/slogx/internal/utils"
 	"golang.org/x/exp/slog"
 )
 
@@ -259,20 +257,20 @@ func NewConsoleFormatter(opts ConsoleFormatterOptions) *consoleFormatter {
 // By default, duration values in attributes are formatted using the String() function and time values are formatted
 // in UTC time using the RFC3339 layout.
 func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time, level slogx.Level, pc uintptr,
-	msg string, attrs []slog.Attr) (*buffer.Buffer, error) {
+	msg string, attrs []slog.Attr) (*slogx.Buffer, error) {
 
 	var err error
 	var strVal string
-	buf := buffer.New()
+	buf := slogx.NewBuffer()
 	handlerCtx := context.WithValue(ctx, ConsoleFormatterOptionsContext{}, &f.options)
 
 	// flatten attributes
 	var attrMap map[string]slog.Value
 	if f.willPrintAttrs {
 		if f.options.SortAttributes {
-			attrs = utils.SortAttrs(attrs)
+			attrs = slogx.SortAttrs(attrs)
 		}
-		attrs = utils.FlattenAttrs(attrs)
+		attrs = slogx.FlattenAttrs(attrs)
 	}
 
 	// now let's actually print the parts out
@@ -344,7 +342,7 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 				fmt.Fprint(buf, part)
 			} else { // specific attribute
 				if len(attrMap) == 0 {
-					attrMap = utils.ToAttrMap(attrs)
+					attrMap = slogx.ToAttrMap(attrs)
 				}
 				if val, ok := attrMap[attr]; ok {
 					if err = f.printAttr(handlerCtx, buf, level, attr, val, printedAttrs); err != nil {
@@ -366,7 +364,7 @@ func (f consoleFormatter) IsColorized() bool {
 }
 
 // printAttr prints the given
-func (f consoleFormatter) printAttr(ctx context.Context, buf *buffer.Buffer, level slog.Leveler, attrKey string,
+func (f consoleFormatter) printAttr(ctx context.Context, buf *slogx.Buffer, level slog.Leveler, attrKey string,
 	attrValue slog.Value, printedAttrs generic.Set[string]) error {
 
 	// already printed the given key
@@ -449,7 +447,7 @@ func (f consoleFormatter) printAttr(ctx context.Context, buf *buffer.Buffer, lev
 }
 
 // printAttrs prints the given list of attributes to the buffer.
-func (f consoleFormatter) printAttrs(ctx context.Context, buf *buffer.Buffer, level slog.Leveler, attrs []slog.Attr,
+func (f consoleFormatter) printAttrs(ctx context.Context, buf *slogx.Buffer, level slog.Leveler, attrs []slog.Attr,
 	printedAttrs generic.Set[string]) error {
 
 	lastBufLen := buf.Len()

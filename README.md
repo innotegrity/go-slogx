@@ -1,7 +1,7 @@
 <div align="center">
   <img width="128" src="./logo.svg" alt="log logo" />
   <h1>go-slogx</h1>
-  <p>Extension of the experimental go `slog` package which adds common handlers and a few extra features.</p>
+  <p>Extension of the go `slog` package which adds common handlers and a few extra features.</p>
   <hr />
   <br />
   <a href="https://pkg.go.dev/go.innotegrity.dev/slogx" target="_blank">
@@ -36,7 +36,7 @@
 
 ## 👁️ Overview
 
-`go-slogx` is an extension of the proposed `slog` package being added to Golang core. This package adds numerous extra features that are not currently available in the standard package.
+`go-slogx` is an extension of the `slog` package in the Golang core. This package adds numerous extra features that are not currently available in the standard package.
 
 Please review the [module documentation](https://pkg.go.dev/go.innotegrity.dev/slogx) for details on how to properly the functions and classes contained in this module.
 
