@@ -15,8 +15,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// FileHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type FileHandlerOptionsContext struct{}
+// fileHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type fileHandlerOptionsContext struct{}
 
 // FileHandlerOptions holds options for the file handler.
 type FileHandlerOptions struct {
@@ -54,8 +54,39 @@ type FileHandlerOptions struct {
 
 	// RecordFormatter specifies the formatter to use to format the record before sending it to Slack.
 	//
-	// If no formatter is supplied, formatters.DefaultJSONFormatter is used to format the output.
+	// If no formatter is supplied, formatter.DefaultJSONFormatter is used to format the output.
 	RecordFormatter formatter.BufferFormatter
+}
+
+// DefaultFileHandlerOptions returns a default set of options for the handler.
+func DefaultFileHandlerOptions() FileHandlerOptions {
+	return FileHandlerOptions{
+		DirMode:         0755,
+		FileMode:        0640,
+		Level:           slog.LevelInfo,
+		MaxFileCount:    5,
+		MaxFileSize:     10000000,
+		RecordFormatter: formatter.DefaultJSONFormatter(),
+	}
+}
+
+// GetFileHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetFileHandlerOptionsFromContext(ctx context.Context) *FileHandlerOptions {
+	o := ctx.Value(fileHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*FileHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultFileHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *FileHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, fileHandlerOptionsContext{}, o)
 }
 
 // fileHandler is a log handler that writes records to a file.
@@ -114,7 +145,7 @@ func (h fileHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // Any attributes duplicated between the handler and record, including within groups, are automaticlaly removed.
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *fileHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := context.WithValue(ctx, FileHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer

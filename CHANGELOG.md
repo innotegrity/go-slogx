@@ -8,6 +8,12 @@ and utilizes [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0
 
 No unreleased changes
 
+## v0.2.0 (Released 2023-09-25)
+
+* Added `ErrorRecord` type
+* Added `LogRecord()` function to `Logger` in order to more easily log `ErrorRecord` objects
+* Updated formatters and handlers to use consistent methods for setting/getting options context
+  
 ## v0.1.0 (Released 2023-08-29)
 
 ### Notes

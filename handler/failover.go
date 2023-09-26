@@ -7,13 +7,37 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// FailoverHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type FailoverHandlerOptionsContext struct{}
+// failoverHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type failoverHandlerOptionsContext struct{}
 
 // FailoverHandlerOptions holds the options available when creating the failoverHandler object.
 type FailoverHandlerOptions struct {
 	// ContinueOnError determines whether or not to continue if an error occurs running middleware.
 	ContinueOnError bool
+}
+
+// DefaultFailoverHandlerOptions returns a default set of options for the handler.
+func DefaultFailoverHandlerOptions() FailoverHandlerOptions {
+	return FailoverHandlerOptions{}
+}
+
+// GetFailoverHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetFailoverHandlerOptionsFromContext(ctx context.Context) *FailoverHandlerOptions {
+	o := ctx.Value(failoverHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*FailoverHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultFailoverHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *FailoverHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, failoverHandlerOptionsContext{}, o)
 }
 
 // failoverHandler simply sends the log message to the first available handler.
@@ -33,7 +57,7 @@ func NewFailoverHandler(opts FailoverHandlerOptions, handlers ...slog.Handler) *
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h failoverHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := context.WithValue(ctx, FailoverHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, l) {
 			return true
@@ -45,7 +69,7 @@ func (h failoverHandler) Enabled(ctx context.Context, l slog.Level) bool {
 // Handle is responsible for finding the first available handler to write the record.
 func (h *failoverHandler) Handle(ctx context.Context, r slog.Record) error {
 	var err error
-	handlerCtx := context.WithValue(ctx, FailoverHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, r.Level) {

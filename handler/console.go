@@ -13,8 +13,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// ConsoleHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type ConsoleHandlerOptionsContext struct{}
+// consoleHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type consoleHandlerOptionsContext struct{}
 
 // ConsoleHandlerOptions holds the options for the console handler.
 type ConsoleHandlerOptions struct {
@@ -25,13 +25,41 @@ type ConsoleHandlerOptions struct {
 
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
-	// If no formatter is supplied, a colorized formatters.DefaultConsoleFormatter is used to format the output.
+	// If no formatter is supplied, a colorized formatter.DefaultConsoleFormatter is used to format the output.
 	RecordFormatter formatter.ColorBufferFormatter
 
 	// Writer is where to write the output to.
 	//
 	// By default, messages are written to os.Stdout if not supplied.
 	Writer io.Writer
+}
+
+// DefaultConsoleHandlerOptions returns a default set of options for the handler.
+func DefaultConsoleHandlerOptions() ConsoleHandlerOptions {
+	return ConsoleHandlerOptions{
+		Level:           slog.LevelInfo,
+		RecordFormatter: formatter.DefaultConsoleFormatter(true),
+		Writer:          os.Stdout,
+	}
+}
+
+// GetConsoleHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetConsoleHandlerOptionsFromContext(ctx context.Context) *ConsoleHandlerOptions {
+	o := ctx.Value(consoleHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*ConsoleHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultConsoleHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *ConsoleHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, consoleHandlerOptionsContext{}, o)
 }
 
 // consoleHandler is a log handler that writes records to an io.Writer, typically a console in a specified format.
@@ -76,7 +104,7 @@ func (h consoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // Any attributes duplicated between the handler and record, including within groups, are automaticlaly removed.
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *consoleHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := context.WithValue(ctx, ConsoleHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer

@@ -12,8 +12,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// JSONHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type JSONHandlerOptionsContext struct{}
+// jsonHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type jsonHandlerOptionsContext struct{}
 
 // JSONHandlerOptions holds the options for the JSON handler.
 type JSONHandlerOptions struct {
@@ -24,13 +24,41 @@ type JSONHandlerOptions struct {
 
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
-	// If no formatter is supplied, formatters.DefaultJSONFormatter is used to format the output.
+	// If no formatter is supplied, formatter.DefaultJSONFormatter is used to format the output.
 	RecordFormatter formatter.BufferFormatter
 
 	// Writer is where to write the output to.
 	//
 	// By default, messages are written to os.Stdout if not supplied.
 	Writer io.Writer
+}
+
+// DefaultJSONHandlerOptions returns a default set of options for the handler.
+func DefaultJSONHandlerOptions() JSONHandlerOptions {
+	return JSONHandlerOptions{
+		Level:           slog.LevelInfo,
+		RecordFormatter: formatter.DefaultJSONFormatter(),
+		Writer:          os.Stdout,
+	}
+}
+
+// GetJSONHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetJSONHandlerOptionsFromContext(ctx context.Context) *JSONHandlerOptions {
+	o := ctx.Value(jsonHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*JSONHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultJSONHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *JSONHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, jsonHandlerOptionsContext{}, o)
 }
 
 // jsonHandler is a log handler that writes records to an io.Writer using standard JSON formatting.
@@ -71,7 +99,7 @@ func (h jsonHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // Any attributes duplicated between the handler and record, including within groups, are automaticlaly removed.
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *jsonHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := context.WithValue(ctx, JSONHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer

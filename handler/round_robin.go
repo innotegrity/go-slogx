@@ -7,13 +7,37 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// RoundRobinHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type RoundRobinHandlerOptionsContext struct{}
+// roundRobinHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type roundRobinHandlerOptionsContext struct{}
 
 // RoundRobinHandlerOptions holds the options available when creating the roundRobinHandler object.
 type RoundRobinHandlerOptions struct {
 	// ContinueOnError determines whether or not to continue if an error occurs running middleware.
 	ContinueOnError bool
+}
+
+// DefaultRoundRobinHandlerOptions returns a default set of options for the handler.
+func DefaultRoundRobinHandlerOptions() RoundRobinHandlerOptions {
+	return RoundRobinHandlerOptions{}
+}
+
+// GetRoundRobinHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetRoundRobinHandlerOptionsFromContext(ctx context.Context) *RoundRobinHandlerOptions {
+	o := ctx.Value(roundRobinHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*RoundRobinHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultRoundRobinHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *RoundRobinHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, roundRobinHandlerOptionsContext{}, o)
 }
 
 // roundRobinHandler simply sends the log message to the next available handler after whichever handler was last used
@@ -36,7 +60,7 @@ func NewRoundRobinHandler(opts RoundRobinHandlerOptions, handlers ...slog.Handle
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h roundRobinHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := context.WithValue(ctx, RoundRobinHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, l) {
 			return true
@@ -50,7 +74,7 @@ func (h roundRobinHandler) Enabled(ctx context.Context, l slog.Level) bool {
 func (h *roundRobinHandler) Handle(ctx context.Context, r slog.Record) error {
 	var err error
 	handlers := append(h.handlers[h.lastIndex:], h.handlers[:h.lastIndex]...)
-	handlerCtx := context.WithValue(ctx, RoundRobinHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 
 	for i, handler := range handlers {
 		if handler.Enabled(handlerCtx, r.Level) {

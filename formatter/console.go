@@ -57,8 +57,8 @@ func ConsoleFormatterAttrPart(attrKey string) ConsoleFormatterPart {
 	return ConsoleFormatterPart(fmt.Sprintf("%s%s", consoleFormatterAttrPart, attrKey))
 }
 
-// ConsoleFormatterOptionsContext can be used to retrieve the options used by the formatter from the context.
-type ConsoleFormatterOptionsContext struct{}
+// consoleFormatterOptionsContext can be used to retrieve the options used by the formatter from the context.
+type consoleFormatterOptionsContext struct{}
 
 // ConsoleFormatterOptions holds the options for the console formatter.
 type ConsoleFormatterOptions struct {
@@ -182,6 +182,25 @@ func DefaultConsoleFormatterOptions() ConsoleFormatterOptions {
 	}
 }
 
+// GetConsoleFormatterOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetErrorOptionsFromContext(ctx context.Context) *ConsoleFormatterOptions {
+	o := ctx.Value(consoleFormatterOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*ConsoleFormatterOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultConsoleFormatterOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *ConsoleFormatterOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, consoleFormatterOptionsContext{}, o)
+}
+
 // consoleFormatter formats records for output to a console such as stdout, stderr or even a file.
 type consoleFormatter struct {
 	// unexported variables
@@ -262,7 +281,7 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 	var err error
 	var strVal string
 	buf := slogx.NewBuffer()
-	handlerCtx := context.WithValue(ctx, ConsoleFormatterOptionsContext{}, &f.options)
+	handlerCtx := f.options.AddToContext(ctx)
 
 	// flatten attributes
 	var attrMap map[string]slog.Value

@@ -8,8 +8,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// MultiHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type MultiHandlerOptionsContext struct{}
+// multiHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type multiHandlerOptionsContext struct{}
 
 // MultiHandlerOptions holds the options available when creating the multiHandler object.
 type MultiHandlerOptions struct {
@@ -26,6 +26,30 @@ type MultiHandlerOptions struct {
 	// When async is enabled, you should be sure to call the Shutdown() function or use the slogx.Shutdown()
 	// function to ensure all goroutines are finished and any pending records have been written.
 	EnableAsync bool
+}
+
+// DefaultMultiHandlerOptions returns a default set of options for the handler.
+func DefaultMultiHandlerOptions() MultiHandlerOptions {
+	return MultiHandlerOptions{}
+}
+
+// GetMultiHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetMultiHandlerOptionsFromContext(ctx context.Context) *MultiHandlerOptions {
+	o := ctx.Value(multiHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*MultiHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultMultiHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *MultiHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, multiHandlerOptionsContext{}, o)
 }
 
 // multiHandler sends the log message to multiple handlers.
@@ -47,7 +71,7 @@ func NewMultiHandler(opts MultiHandlerOptions, handler ...slog.Handler) *multiHa
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h multiHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := context.WithValue(ctx, MultiHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, l) {
 			return true
@@ -58,7 +82,7 @@ func (h multiHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle is responsible for writing the record to each and every handler.
 func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := context.WithValue(ctx, MultiHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	if !h.options.EnableAsync {
 		return h.handle(handlerCtx, r)
 	}

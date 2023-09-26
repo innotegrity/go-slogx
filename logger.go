@@ -97,6 +97,11 @@ func (l *Logger) LogAttrs(ctx context.Context, level Level, msg string, attrs ..
 	l.logAttrs(ctx, level, msg, attrs...)
 }
 
+// LogRecord simply logs the given pre-created record.
+func (l *Logger) LogRecord(ctx context.Context, r slog.Record) {
+	_ = l.Handler().Handle(ctx, r)
+}
+
 // Notice logs a message using NOTICE level.
 func (l *Logger) Notice(msg string, args ...any) {
 	l.log(context.Background(), LevelNotice, msg, args...)

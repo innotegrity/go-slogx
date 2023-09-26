@@ -6,8 +6,8 @@ import (
 	"golang.org/x/exp/slog"
 )
 
-// PipeHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
-type PipeHandlerOptionsContext struct{}
+// pipeHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
+type pipeHandlerOptionsContext struct{}
 
 // PipeHandlerFn should take the clone of the given record, modify it as needed and return the modified version.
 type PipeHandlerFn func(context.Context, slog.Record) (slog.Record, error)
@@ -20,6 +20,32 @@ type PipeHandlerOptions struct {
 
 	// PipeFns defines the list of functions to pipe the record through before passing it onto the next handler.
 	PipeFns []PipeHandlerFn
+}
+
+// DefaultPipeHandlerOptions returns a default set of options for the handler.
+func DefaultPipeHandlerOptions() PipeHandlerOptions {
+	return PipeHandlerOptions{
+		PipeFns: []PipeHandlerFn{},
+	}
+}
+
+// GetPipeHandlerOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetPipeHandlerOptionsFromContext(ctx context.Context) *PipeHandlerOptions {
+	o := ctx.Value(pipeHandlerOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*PipeHandlerOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultPipeHandlerOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *PipeHandlerOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, pipeHandlerOptionsContext{}, o)
 }
 
 // pipeHandler is a handler which sends the record through one or more functions before passing it onto the next handler.
@@ -39,7 +65,7 @@ func NewPipeHandler(opts PipeHandlerOptions, next slog.Handler) *pipeHandler {
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h pipeHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := context.WithValue(ctx, PipeHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	if h.next == nil {
 		return false
 	}
@@ -48,7 +74,7 @@ func (h pipeHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle runs the record through all of the pipe functions and then sends it on to the next handler.
 func (h *pipeHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := context.WithValue(ctx, PipeHandlerOptionsContext{}, &h.options)
+	handlerCtx := h.options.AddToContext(ctx)
 	if h.next == nil {
 		return nil
 	}

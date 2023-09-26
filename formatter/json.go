@@ -30,8 +30,8 @@ const (
 	JSONFormatterTimeAttr = "@time"
 )
 
-// JSONFormatterOptionsContext can be used to retrieve the options used by the formatter from the context.
-type JSONFormatterOptionsContext struct{}
+// jsonFormatterOptionsContext can be used to retrieve the options used by the formatter from the context.
+type jsonFormatterOptionsContext struct{}
 
 // JSONFormatterOptions holds the options for the JSON formatter.
 type JSONFormatterOptions struct {
@@ -144,6 +144,25 @@ func DefaultJSONFormatterOptions() JSONFormatterOptions {
 	}
 }
 
+// GetJSONFormatterOptionsFromContext retrieves the options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func GetJSONFormatterOptionsFromContext(ctx context.Context) *JSONFormatterOptions {
+	o := ctx.Value(jsonFormatterOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*JSONFormatterOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultJSONFormatterOptions()
+	return &opts
+}
+
+// AddToContext adds the options to the given context and returns the new context.
+func (o *JSONFormatterOptions) AddToContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, jsonFormatterOptionsContext{}, o)
+}
+
 // jsonFormatter formats records for output as JSON.
 type jsonFormatter struct {
 	// unexported variables
@@ -200,7 +219,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 	var err error
 	var strVal string
 	buf := slogx.NewBuffer()
-	handlerCtx := context.WithValue(ctx, JSONFormatterOptionsContext{}, &f.options)
+	handlerCtx := f.options.AddToContext(ctx)
 
 	// open the JSON
 	buf.WriteByte('{')
