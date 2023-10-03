@@ -8,7 +8,7 @@ and utilizes [Conventional Commit](https://www.conventionalcommits.org/en/v1.0.0
 
 No unreleased changes
 
-## v0.3.0 (Released 2023-10-02)
+## v0.3.1 (Released 2023-10-02)
 
 * Moved to requiring `go` version `1.21` or later in order to remove experimental library
 * Added `Default()` function to return default logger
