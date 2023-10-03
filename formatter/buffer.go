@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
+	"log/slog"
+
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // BufferFormatter describes the interface a formatter which outputs a record to a buffer must implement.

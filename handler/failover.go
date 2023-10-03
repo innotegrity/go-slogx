@@ -3,8 +3,9 @@ package handler
 import (
 	"context"
 
+	"log/slog"
+
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // failoverHandlerOptionsContext can be used to retrieve the options used by the handler from the context.

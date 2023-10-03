@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 
+	"log/slog"
+
 	"go.innotegrity.dev/async"
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // ConditionMatchesFn is called to determine whether or not the given record should be logged.

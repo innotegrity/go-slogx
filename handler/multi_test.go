@@ -9,11 +9,12 @@ import (
 	"testing"
 	"time"
 
+	"log/slog"
+
 	"github.com/mattn/go-colorable"
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
 	"go.innotegrity.dev/slogx/handler"
-	"golang.org/x/exp/slog"
 )
 
 func TestMulti1(t *testing.T) {

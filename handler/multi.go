@@ -3,9 +3,10 @@ package handler
 import (
 	"context"
 
+	"log/slog"
+
 	"go.innotegrity.dev/async"
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // multiHandlerOptionsContext can be used to retrieve the options used by the handler from the context.

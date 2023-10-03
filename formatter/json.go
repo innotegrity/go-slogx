@@ -8,8 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 const (

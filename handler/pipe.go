@@ -3,7 +3,7 @@ package handler
 import (
 	"context"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // pipeHandlerOptionsContext can be used to retrieve the options used by the handler from the context.

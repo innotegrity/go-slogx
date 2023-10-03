@@ -6,11 +6,12 @@ import (
 	"os"
 	"sync"
 
+	"log/slog"
+
 	"github.com/mattn/go-colorable"
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/slogx"
 	"go.innotegrity.dev/slogx/formatter"
-	"golang.org/x/exp/slog"
 )
 
 // consoleHandlerOptionsContext can be used to retrieve the options used by the handler from the context.

@@ -5,10 +5,11 @@ import (
 	"testing"
 	"time"
 
+	"log/slog"
+
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/slogx"
 	"go.innotegrity.dev/slogx/handler"
-	"golang.org/x/exp/slog"
 )
 
 func TestFile1(t *testing.T) {

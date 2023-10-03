@@ -8,11 +8,12 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	"github.com/fatih/color"
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/runtimex"
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 const (

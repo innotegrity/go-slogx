@@ -5,8 +5,9 @@ import (
 	"runtime"
 	"time"
 
+	"log/slog"
+
 	"go.innotegrity.dev/errorx"
-	"golang.org/x/exp/slog"
 )
 
 // errorOptionsContext can be used to retrieve error options the context.

@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"time"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // ShutdownableHandler describes a handler which is capable of being shutdown.
@@ -38,6 +38,13 @@ type Logger struct {
 	// IgnorePC indicates whether or not to invoke runtime.Callers to get the program counter in order to retrieve
 	// source file information.
 	IgnorePC bool
+}
+
+// Default returns the default logger object.
+func Default() *Logger {
+	return &Logger{
+		Logger: slog.Default(),
+	}
 }
 
 // Wrap simply wraps the slog.Logger in an slogx.Logger object.

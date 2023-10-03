@@ -9,10 +9,11 @@ import (
 	"path/filepath"
 	"sync"
 
+	"log/slog"
+
 	"go.innotegrity.dev/generic"
 	"go.innotegrity.dev/slogx"
 	"go.innotegrity.dev/slogx/formatter"
-	"golang.org/x/exp/slog"
 )
 
 // fileHandlerOptionsContext can be used to retrieve the options used by the handler from the context.

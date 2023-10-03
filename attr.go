@@ -2,14 +2,14 @@ package slogx
 
 import (
 	"fmt"
+	"log/slog"
 	"net/http"
+	"slices"
 	"sort"
 	"strings"
 
 	"go.innotegrity.dev/errorx"
 	"go.innotegrity.dev/generic"
-	"golang.org/x/exp/slices"
-	"golang.org/x/exp/slog"
 )
 
 // ConsolidateAttrs combines the given attributes with attributes from the record, mapping the record attributes under

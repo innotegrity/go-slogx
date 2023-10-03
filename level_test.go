@@ -6,8 +6,9 @@ import (
 	"os"
 	"testing"
 
+	"log/slog"
+
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // TODO: implement testing and benchmarks

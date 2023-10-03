@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"strings"
 
-	"golang.org/x/exp/slog"
+	"log/slog"
 )
 
 // Extended log levels in addition to the standard ones.

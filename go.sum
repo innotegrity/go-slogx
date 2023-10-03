@@ -13,8 +13,6 @@ go.innotegrity.dev/generic v0.1.1 h1:RHEA1Z1ZjCRfzdxxvTPdX2y+BKjGlHT4x6NreR/L+U4
 go.innotegrity.dev/generic v0.1.1/go.mod h1:SS2En0XONi0Mv0xKmXH/f2IwvQAl6g0Jw+rfeFhd1kM=
 go.innotegrity.dev/runtimex v0.1.0 h1:Yc8vMOVEaX7u3v/gupPkJtJigirjOtwgYvdYRsWF9lg=
 go.innotegrity.dev/runtimex v0.1.0/go.mod h1:c1h1unKRRYqzOfaR3Ru0EvALsm0x4eVymN3zQP1V6Yk=
-golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b h1:r+vk0EmXNmekl0S0BascoeeoHk/L7wmaW2QF90K+kYI=
-golang.org/x/exp v0.0.0-20230801115018-d63ba01acd4b/go.mod h1:FXUEEKJgO7OQYeo8N01OfiKP8RXMtf6e8aTskBGqWdc=
 golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
 golang.org/x/sys v0.8.0 h1:EBmGv8NaZBZTWvrbjNoL6HVt+IVy3QDQpJs7VRIw3tU=
 golang.org/x/sys v0.8.0/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=

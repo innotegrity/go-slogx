@@ -6,9 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"log/slog"
+
 	"go.innotegrity.dev/runtimex"
 	"go.innotegrity.dev/slogx"
-	"golang.org/x/exp/slog"
 )
 
 // FormatAttrFn is used to format the key and value for a particular attribute in the record.
