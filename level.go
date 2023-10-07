@@ -11,6 +11,7 @@ import (
 
 // Extended log levels in addition to the standard ones.
 const (
+	LevelNone   = Level(-2147483648)
 	LevelTrace  = Level(-8)
 	LevelDebug  = Level(slog.LevelDebug)
 	LevelInfo   = Level(slog.LevelInfo)
@@ -49,6 +50,8 @@ func (l Level) ShortString() string {
 	}
 
 	switch {
+	case l == LevelNone:
+		return str("NON", 0)
 	case l <= LevelTrace:
 		return str("TRC", l-LevelTrace)
 	case l <= LevelDebug:
@@ -78,6 +81,8 @@ func (l Level) String() string {
 	}
 
 	switch {
+	case l == LevelNone:
+		return str("NONE", 0)
 	case l <= LevelTrace:
 		return str("TRACE", l-LevelTrace)
 	case l <= LevelDebug:
@@ -125,6 +130,8 @@ func (l *Level) parse(s string) error {
 	}
 
 	switch strings.ToUpper(name) {
+	case "NONE":
+		*l = LevelNone
 	case "TRACE":
 		*l = LevelTrace
 	case "DEBUG":

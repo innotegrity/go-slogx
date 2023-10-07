@@ -4,6 +4,10 @@
 
 No unreleased changes
 
+## v0.3.2 (Released 2023-10-06)
+
+* Added `LevelNone` level
+  
 ## v0.3.1 (Released 2023-10-02)
 
 * Moved to requiring `go` version `1.21` or later in order to remove experimental library
