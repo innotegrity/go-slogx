@@ -2,56 +2,57 @@ package slogx
 
 import (
 	"context"
+	"log/slog"
 	"runtime"
 	"time"
-
-	"log/slog"
 
 	"go.innotegrity.dev/errorx"
 )
 
-// errorOptionsContext can be used to retrieve error options the context.
+// errorOptionsContext is used to store an [ErrorOptions] object within a standard Go context object.
 type errorOptionsContext struct{}
 
+// ErrorOptions stores options for working with error records.
 type ErrorOptions struct {
-	// AdjectPCFramesBy adjusts the default frame count of 2 by the given amount when retrieving the program counter.
-	AdjustPCFramesBy int
+	// AdjustFrameCount indicates a number of frames to adjust the skip by when calling runtime.Callers. By default,
+	// 3 frames are skipped when creating the record.
+	AdjustFrameCount int
 
-	// IgnorePC determines whether or not to retrieve the program counter (for determining file+line) when creating
-	// the error roecord.
-	IgnorePC bool
+	// IncludeFileLine indicates whether or not to invoke runtime.Callers to get the program counter in order to retrieve
+	// source file information.
+	IncludeFileLine bool
 }
 
-// DefaultErrorOptions returns a default set of error options.
-func DefaultErrorOptions() ErrorOptions {
-	return ErrorOptions{
-		IgnorePC:         false,
-		AdjustPCFramesBy: 0,
+// NewErrorOptions creates a new object with default values.
+func NewErrorOptions() *ErrorOptions {
+	return &ErrorOptions{
+		IncludeFileLine:  false,
+		AdjustFrameCount: 0,
 	}
 }
 
-// GetErrorOptionsFromContext retrieves the options from the context.
+// FromContext retrieves the error options stored inside the context and replaces the current options with those.
 //
-// If the options are not set in the context, a set of default options is returned instead.
-func GetErrorOptionsFromContext(ctx context.Context) *ErrorOptions {
-	o := ctx.Value(errorOptionsContext{})
-	if o != nil {
-		if opts, ok := o.(*ErrorOptions); ok {
-			return opts
+// If no options are found in the context, the object is left unchanged. The function returns the object itself
+// as a convenient method for assigning the value.
+func (o *ErrorOptions) FromContext(ctx context.Context) *ErrorOptions {
+	opts := ctx.Value(errorOptionsContext{})
+	if opts != nil {
+		if opts, ok := opts.(*ErrorOptions); ok {
+			o = opts
 		}
 	}
-	opts := DefaultErrorOptions()
-	return &opts
+	return o
 }
 
-// AddToContext adds the options to the given context and returns the new context.
-func (o *ErrorOptions) AddToContext(ctx context.Context) context.Context {
+// SaveToContext stores the options within the given context and returns the new context.
+func (o *ErrorOptions) SaveToContext(ctx context.Context) context.Context {
 	return context.WithValue(ctx, errorOptionsContext{}, o)
 }
 
 // ErrorRecord holds extended error information an a log record created when the error occurred.
 //
-// The error can be logged at a later time using slogx.LogRecord().
+// The error can be logged at a later time using [LogRecord].
 type ErrorRecord struct {
 	// Error holds details of the extended error that occurred.
 	Error errorx.Error
@@ -62,14 +63,14 @@ type ErrorRecord struct {
 
 // NewErrorRecord creates a new ErrorRecord object.
 func NewErrorRecord(ctx context.Context, level slog.Leveler, msg string, err errorx.Error) *ErrorRecord {
-	opts := GetErrorOptionsFromContext(ctx)
+	opts := NewErrorOptions().FromContext(ctx)
 
 	// include program counter, if desired
 	pc := uintptr(0)
-	if !opts.IgnorePC {
+	if opts.IncludeFileLine {
 		var pcs [1]uintptr
 		// skip runtime.Callers, this function
-		runtime.Callers(2+opts.AdjustPCFramesBy, pcs[:])
+		runtime.Callers(2+opts.AdjustFrameCount, pcs[:])
 		pc = pcs[0]
 	}
 

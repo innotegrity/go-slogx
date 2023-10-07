@@ -37,9 +37,7 @@ type FileHandlerOptions struct {
 	FileMode fs.FileMode
 
 	// Level is the minimum log level to write to the handler.
-	//
-	// By default, the level will be set to slog.LevelInfo if not supplied.
-	Level slog.Leveler
+	Level slogx.Level
 
 	// MaxFileCount indicates the maximum number of log files to keep, including the active log file.
 	//
@@ -64,7 +62,7 @@ func DefaultFileHandlerOptions() FileHandlerOptions {
 	return FileHandlerOptions{
 		DirMode:         0755,
 		FileMode:        0640,
-		Level:           slog.LevelInfo,
+		Level:           slogx.LevelInfo,
 		MaxFileCount:    5,
 		MaxFileSize:     10000000,
 		RecordFormatter: formatter.DefaultJSONFormatter(),
@@ -115,9 +113,6 @@ func NewFileHandler(opts FileHandlerOptions) (*fileHandler, error) {
 	if opts.FileMode == 0 {
 		opts.FileMode = 0640
 	}
-	if opts.Level == nil {
-		opts.Level = slog.LevelInfo
-	}
 	if opts.MaxFileCount == 0 {
 		opts.MaxFileCount = 5
 	}
@@ -167,6 +162,11 @@ func (h *fileHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.write(buf)
 }
 
+// Level returns the current logging level that is in use by the handler.
+func (h fileHandler) Level() slogx.Level {
+	return h.options.Level
+}
+
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h fileHandler) Shutdown(continueOnError bool) error {
 	if h.file != nil {
@@ -209,6 +209,21 @@ func (h fileHandler) WithGroup(name string) slog.Handler {
 		newHandler.activeGroup = name
 	}
 	return newHandler
+}
+
+// WithLevel returns a new handler with the given logging level set.
+func (h fileHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
+	options := h.options
+	options.Level = level
+	return &fileHandler{
+		activeGroup:     h.activeGroup,
+		attrs:           h.attrs,
+		currentFileSize: h.currentFileSize,
+		file:            h.file,
+		groups:          h.groups,
+		options:         options,
+		writeLock:       h.writeLock,
+	}
 }
 
 // openFile opens the log file for writing or creates it and any parent folders if they do not exist.

@@ -211,7 +211,7 @@ func SortAttrs(attrs []slog.Attr) []slog.Attr {
 
 // ToAttrMap converts the given attribute slice to a map of string/values.
 //
-// This function does not recursively convert groups. Use FlattenAttrs to flatten the attribute list first.
+// This function does not recursively convert groups. Use [FlattenAttrs] to flatten the attribute list first.
 func ToAttrMap(attrs []slog.Attr) map[string]slog.Value {
 	result := map[string]slog.Value{}
 	for _, attr := range attrs {

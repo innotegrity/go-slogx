@@ -90,6 +90,24 @@ func (h *roundRobinHandler) Handle(ctx context.Context, r slog.Record) error {
 	return err
 }
 
+// Level returns the current logging level that is in use by the handler.
+//
+// In the case of a round-robin handler, the level returned is that of the lowest level in use by any of
+// the handlers which implement the slogx.DynamicLevelHandler interface.
+//
+// If no handler implements the slogx.DynamicHandler interface, slogx.LevelPanic is returned.
+func (h roundRobinHandler) Level() slogx.Level {
+	l := slogx.LevelPanic
+	for _, handler := range h.handlers {
+		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
+			if levelHandler.Level() < l {
+				l = levelHandler.Level()
+			}
+		}
+	}
+	return l
+}
+
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h roundRobinHandler) Shutdown(continueOnError bool) error {
 	for _, handler := range h.handlers {
@@ -117,6 +135,23 @@ func (h roundRobinHandler) WithGroup(name string) slog.Handler {
 	handlers := []slog.Handler{}
 	for _, handler := range h.handlers {
 		handlers = append(handlers, handler.WithGroup(name))
+	}
+	handler := NewRoundRobinHandler(h.options, handlers...)
+	return handler
+}
+
+// WithLevel returns a new handler with the given logging level set.
+//
+// In the case of a round-robin handler, any handler that implements the slogx.DynamicLevelHandler interface will
+// return a new handler with the level set accordingly.
+func (h roundRobinHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
+	handlers := []slog.Handler{}
+	for _, handler := range h.handlers {
+		hnd := handler
+		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
+			hnd = levelHandler.WithLevel(level)
+		}
+		handlers = append(handlers, hnd)
 	}
 	handler := NewRoundRobinHandler(h.options, handlers...)
 	return handler

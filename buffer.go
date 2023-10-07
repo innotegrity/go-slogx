@@ -45,6 +45,11 @@ func (b *Buffer) Reset() {
 	*b = (*b)[:0]
 }
 
+// String returns the string stored by the buffer.
+func (b *Buffer) String() string {
+	return string(*b)
+}
+
 // Write handles writing bytes to the buffer.
 func (b *Buffer) Write(p []byte) (int, error) {
 	*b = append(*b, p...)
@@ -92,8 +97,4 @@ func (b *Buffer) WritePosIntWidth(i, width int) {
 	// i < 10
 	bb[bp] = byte('0' + i)
 	_, _ = b.Write(bb[bp:])
-}
-
-func (b *Buffer) String() string {
-	return string(*b)
 }

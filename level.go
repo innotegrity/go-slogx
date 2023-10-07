@@ -11,21 +11,22 @@ import (
 
 // Extended log levels in addition to the standard ones.
 const (
-	LevelNone   = Level(-2147483648)
-	LevelTrace  = Level(-8)
-	LevelDebug  = Level(slog.LevelDebug)
-	LevelInfo   = Level(slog.LevelInfo)
-	LevelNotice = Level(2)
-	LevelWarn   = Level(slog.LevelWarn)
-	LevelError  = Level(slog.LevelError)
-	LevelFatal  = Level(12)
-	LevelPanic  = Level(16)
+	LevelNone    = Level(-2147483648)
+	LevelUnknown = Level(-2147483647)
+	LevelTrace   = Level(-8)
+	LevelDebug   = Level(slog.LevelDebug)
+	LevelInfo    = Level(slog.LevelInfo)
+	LevelNotice  = Level(2)
+	LevelWarn    = Level(slog.LevelWarn)
+	LevelError   = Level(slog.LevelError)
+	LevelFatal   = Level(12)
+	LevelPanic   = Level(16)
 )
 
-// Level is just like slog.Level - an integer
+// Level is just an integer
 type Level int
 
-// Level returns the slog.Level equivalent level.
+// Level returns the level itself in order to implement the `Leveler` interface.
 func (l Level) Level() slog.Level {
 	return slog.Level(l)
 }
@@ -40,7 +41,15 @@ func (l Level) MarshalText() ([]byte, error) {
 	return []byte(l.String()), nil
 }
 
-// ShortString returns the level as a 3 character string.
+// ShortString returns a 3-character name for the level.
+//
+// If the level has a name, then that name in uppercase is returned. If the level is between named values, then
+// an integer is appended to the uppercased name.
+
+// Examples:
+//
+//	LevelWarn.String() => "WRN"
+//	(LevelInfo+2).String() => "INF+2"
 func (l Level) ShortString() string {
 	str := func(base string, val Level) string {
 		if val == 0 {
@@ -71,7 +80,15 @@ func (l Level) ShortString() string {
 	}
 }
 
-// String returns the level as a string.
+// String returns a name for the level.
+//
+// If the level has a name, then that name in uppercase is returned. If the level is between named values, then
+// an integer is appended to the uppercased name.
+//
+// Examples:
+//
+//	LevelWarn.String() => "WARN"
+//	(LevelInfo+2).String() => "INFO+2"
 func (l Level) String() string {
 	str := func(base string, val Level) string {
 		if val == 0 {

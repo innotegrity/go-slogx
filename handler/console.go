@@ -20,9 +20,7 @@ type consoleHandlerOptionsContext struct{}
 // ConsoleHandlerOptions holds the options for the console handler.
 type ConsoleHandlerOptions struct {
 	// Level is the minimum log level to write to the handler.
-	//
-	// By default, the level will be set to slog.LevelInfo if not supplied.
-	Level slog.Leveler
+	Level slogx.Level
 
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
@@ -38,7 +36,7 @@ type ConsoleHandlerOptions struct {
 // DefaultConsoleHandlerOptions returns a default set of options for the handler.
 func DefaultConsoleHandlerOptions() ConsoleHandlerOptions {
 	return ConsoleHandlerOptions{
-		Level:           slog.LevelInfo,
+		Level:           slogx.LevelInfo,
 		RecordFormatter: formatter.DefaultConsoleFormatter(true),
 		Writer:          os.Stdout,
 	}
@@ -75,9 +73,6 @@ type consoleHandler struct {
 // NewConsoleHandler creates a new handler object.
 func NewConsoleHandler(opts ConsoleHandlerOptions) *consoleHandler {
 	// set default options
-	if opts.Level == nil {
-		opts.Level = slogx.LevelInfo
-	}
 	if opts.Writer == nil {
 		opts.Writer = os.Stdout
 	}
@@ -129,6 +124,11 @@ func (h *consoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	return err
 }
 
+// Level returns the current logging level that is in use by the handler.
+func (h consoleHandler) Level() slogx.Level {
+	return h.options.Level
+}
+
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h consoleHandler) Shutdown(continueOnError bool) error {
 	if w, ok := h.options.Writer.(io.WriteCloser); ok {
@@ -169,4 +169,17 @@ func (h *consoleHandler) WithGroup(name string) slog.Handler {
 		newHandler.activeGroup = name
 	}
 	return newHandler
+}
+
+// WithLevel returns a new handler with the given logging level set.
+func (h consoleHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
+	options := h.options
+	options.Level = level
+	return &consoleHandler{
+		activeGroup: h.activeGroup,
+		attrs:       h.attrs,
+		groups:      h.groups,
+		options:     options,
+		writeLock:   h.writeLock,
+	}
 }

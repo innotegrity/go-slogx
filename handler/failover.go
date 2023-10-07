@@ -84,6 +84,21 @@ func (h *failoverHandler) Handle(ctx context.Context, r slog.Record) error {
 	return err
 }
 
+// Level returns the current logging level that is in use by the handler.
+//
+// In the case of a failover handler, the level returned is that of the lowest level in use by any of the handlers.
+func (h failoverHandler) Level() slogx.Level {
+	l := slogx.LevelPanic
+	for _, handler := range h.handlers {
+		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
+			if levelHandler.Level() < l {
+				l = levelHandler.Level()
+			}
+		}
+	}
+	return l
+}
+
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h failoverHandler) Shutdown(continueOnError bool) error {
 	for _, handler := range h.handlers {
@@ -111,6 +126,23 @@ func (h failoverHandler) WithGroup(name string) slog.Handler {
 	handlers := []slog.Handler{}
 	for _, handler := range h.handlers {
 		handlers = append(handlers, handler.WithGroup(name))
+	}
+	handler := NewFailoverHandler(h.options, handlers...)
+	return handler
+}
+
+// WithLevel returns a new handler with the given logging level set.
+//
+// In the case of a failover handler, any handler that implements the slogx.DynamicLevelHandler interface will return
+// a new handler with the level set accordingly.
+func (h failoverHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
+	handlers := []slog.Handler{}
+	for _, handler := range h.handlers {
+		hnd := handler
+		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
+			hnd = levelHandler.WithLevel(level)
+		}
+		handlers = append(handlers, hnd)
 	}
 	handler := NewFailoverHandler(h.options, handlers...)
 	return handler

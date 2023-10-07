@@ -8,14 +8,8 @@ import (
 	"log/slog"
 )
 
-// ShutdownableHandler describes a handler which is capable of being shutdown.
-type ShutdownableHandler interface {
-	slog.Handler
-	Shutdown(bool) error
-}
-
 // Shutdown will cleanup any open resources or pending goroutines being run in the handler(s) attached to the logger.
-func Shutdown(l *slog.Logger, continueOnError bool) error {
+func Shutdown(l *Logger, continueOnError bool) error {
 	if l == nil {
 		return nil
 	}
@@ -31,13 +25,13 @@ func Shutdown(l *slog.Logger, continueOnError bool) error {
 type Logger struct {
 	*slog.Logger
 
-	// AdjustPCFramesBy indicates a number of frames to adjust the skip by when calling runtime.Callers. By default,
+	// AdjustFrameCount indicates a number of frames to adjust the skip by when calling runtime.Callers. By default,
 	// 3 frames are skipped when creating the record.
-	AdjustPCFramesBy int
+	AdjustFrameCount int
 
-	// IgnorePC indicates whether or not to invoke runtime.Callers to get the program counter in order to retrieve
+	// IncludeFileLine indicates whether or not to invoke runtime.Callers to get the program counter in order to retrieve
 	// source file information.
-	IgnorePC bool
+	IncludeFileLine bool
 }
 
 // Default returns the default logger object.
@@ -165,10 +159,10 @@ func (l *Logger) log(ctx context.Context, level Level, msg string, args ...any) 
 		return
 	}
 	var pc uintptr
-	if !l.IgnorePC {
+	if l.IncludeFileLine {
 		var pcs [1]uintptr
 		// skip runtime.Callers, this function, calling function
-		runtime.Callers(3+l.AdjustPCFramesBy, pcs[:])
+		runtime.Callers(3+l.AdjustFrameCount, pcs[:])
 		pc = pcs[0]
 	}
 	r := slog.NewRecord(time.Now(), slog.Level(level), msg, pc)
@@ -185,10 +179,10 @@ func (l *Logger) logAttrs(ctx context.Context, level Level, msg string, attrs ..
 		return
 	}
 	var pc uintptr
-	if !l.IgnorePC {
+	if l.IncludeFileLine {
 		var pcs [1]uintptr
 		// skip runtime.Callers, this function, calling function
-		runtime.Callers(3+l.AdjustPCFramesBy, pcs[:])
+		runtime.Callers(3+l.AdjustFrameCount, pcs[:])
 		pc = pcs[0]
 	}
 	r := slog.NewRecord(time.Now(), slog.Level(level), msg, pc)
