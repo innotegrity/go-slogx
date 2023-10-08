@@ -214,6 +214,7 @@ type consoleFormatter struct {
 func DefaultConsoleFormatter(colorize bool) *consoleFormatter {
 	options := DefaultConsoleFormatterOptions()
 	if colorize {
+		options.EnableColor = true
 		options.AttrFormatter = ColorizeAttrFormatter
 		options.LevelFormatter = ColorizeLevelFormatter
 		options.PartOrder = []ConsoleFormatterPart{
