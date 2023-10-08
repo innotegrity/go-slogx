@@ -20,7 +20,9 @@ type consoleHandlerOptionsContext struct{}
 // ConsoleHandlerOptions holds the options for the console handler.
 type ConsoleHandlerOptions struct {
 	// Level is the minimum log level to write to the handler.
-	Level slogx.Level
+	//
+	// If this is nil, it defaults to slogx.LevelInfo.
+	Level *slogx.LevelVar
 
 	// RecordFormatter specifies the formatter to use to format the record before writing it to the writer.
 	//
@@ -36,7 +38,7 @@ type ConsoleHandlerOptions struct {
 // DefaultConsoleHandlerOptions returns a default set of options for the handler.
 func DefaultConsoleHandlerOptions() ConsoleHandlerOptions {
 	return ConsoleHandlerOptions{
-		Level:           slogx.LevelInfo,
+		Level:           slogx.NewLevelVar(slogx.LevelInfo),
 		RecordFormatter: formatter.DefaultConsoleFormatter(true),
 		Writer:          os.Stdout,
 	}
@@ -73,6 +75,9 @@ type consoleHandler struct {
 // NewConsoleHandler creates a new handler object.
 func NewConsoleHandler(opts ConsoleHandlerOptions) *consoleHandler {
 	// set default options
+	if opts.Level == nil {
+		opts.Level = slogx.NewLevelVar(slogx.LevelInfo)
+	}
 	if opts.Writer == nil {
 		opts.Writer = os.Stdout
 	}
@@ -92,7 +97,7 @@ func NewConsoleHandler(opts ConsoleHandlerOptions) *consoleHandler {
 
 // Enabled determines whether or not the given level is enabled in this handler.
 func (h consoleHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.options.Level.Level()
+	return slogx.Level(level) >= h.options.Level.Level()
 }
 
 // Handle actually handles writing the record to the output writer.
@@ -122,11 +127,6 @@ func (h *consoleHandler) Handle(ctx context.Context, r slog.Record) error {
 	defer h.writeLock.Unlock()
 	_, err = h.options.Writer.Write(buf.Bytes())
 	return err
-}
-
-// Level returns the current logging level that is in use by the handler.
-func (h consoleHandler) Level() slogx.Level {
-	return h.options.Level
 }
 
 // Shutdown is responsible for cleaning up resources used by the handler.
@@ -169,17 +169,4 @@ func (h *consoleHandler) WithGroup(name string) slog.Handler {
 		newHandler.activeGroup = name
 	}
 	return newHandler
-}
-
-// WithLevel returns a new handler with the given logging level set.
-func (h consoleHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
-	options := h.options
-	options.Level = level
-	return &consoleHandler{
-		activeGroup: h.activeGroup,
-		attrs:       h.attrs,
-		groups:      h.groups,
-		options:     options,
-		writeLock:   h.writeLock,
-	}
 }

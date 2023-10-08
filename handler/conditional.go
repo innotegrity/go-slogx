@@ -135,24 +135,6 @@ func (h *conditionalHandler) Handle(ctx context.Context, r slog.Record) error {
 	return nil
 }
 
-// Level returns the current logging level that is in use by the handler.
-//
-// In the case of a conditional handler, the level returned is that of the lowest level in use by the handler in any
-// condition which implmenents the slogx.DynamicLevelHandler interface.
-//
-// If no handler implements the slogx.DynamicHandler interface, slogx.LevelPanic is returned.
-func (h conditionalHandler) Level() slogx.Level {
-	l := slogx.LevelPanic
-	for _, c := range h.conditions {
-		if handler, ok := c.handler.(slogx.DynamicLevelHandler); ok {
-			if handler.Level() < l {
-				l = handler.Level()
-			}
-		}
-	}
-	return l
-}
-
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h conditionalHandler) Shutdown(continueOnError bool) error {
 	for _, c := range h.conditions {
@@ -186,25 +168,6 @@ func (h conditionalHandler) WithGroup(name string) slog.Handler {
 	conditions := []*condition{}
 	for _, c := range h.conditions {
 		conditions = append(conditions, NewCondition(c.handler.WithGroup(name), c.matcherFns...))
-	}
-	handler := NewConditionalHandler(h.options, conditions...)
-	handler.futures = h.futures
-	return handler
-}
-
-// WithLevel returns a new handler with the given logging level set.
-//
-// In the case of a conditional handler, any condition containing a handler that implements the
-// slogx.DynamicLevelHandler interface will return a condition with a new handler with the level
-// set accordingly.
-func (h conditionalHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
-	conditions := []*condition{}
-	for _, c := range h.conditions {
-		cond := c
-		if handler, ok := c.handler.(slogx.DynamicLevelHandler); ok {
-			cond = NewCondition(handler.WithLevel(level), c.matcherFns...)
-		}
-		conditions = append(conditions, cond)
 	}
 	handler := NewConditionalHandler(h.options, conditions...)
 	handler.futures = h.futures

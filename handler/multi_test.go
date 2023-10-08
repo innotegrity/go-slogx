@@ -20,12 +20,12 @@ import (
 func TestMulti1(t *testing.T) {
 	writer := colorable.NewColorable(os.Stdout)
 	consoleHandler := handler.NewConsoleHandler(handler.ConsoleHandlerOptions{
-		Level:           slogx.LevelTrace,
+		Level:           slogx.NewLevelVar(slogx.LevelTrace),
 		RecordFormatter: nil,
 		Writer:          writer,
 	})
 	jsonHandler := handler.NewJSONHandler(handler.JSONHandlerOptions{
-		Level:           slogx.LevelTrace,
+		Level:           slogx.NewLevelVar(slogx.LevelTrace),
 		RecordFormatter: nil,
 		Writer:          os.Stdout,
 	})

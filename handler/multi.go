@@ -95,24 +95,6 @@ func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
 	return nil
 }
 
-// Level returns the current logging level that is in use by the handler.
-//
-// In the case of a multi handler, the level returned is that of the lowest level in use by any of
-// the handlers which implement the slogx.DynamicLevelHandler interface.
-//
-// If no handler implements the slogx.DynamicHandler interface, slogx.LevelPanic is returned.
-func (h multiHandler) Level() slogx.Level {
-	l := slogx.LevelPanic
-	for _, handler := range h.handlers {
-		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
-			if levelHandler.Level() < l {
-				l = levelHandler.Level()
-			}
-		}
-	}
-	return l
-}
-
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h multiHandler) Shutdown(continueOnError bool) error {
 	for _, handler := range h.handlers {
@@ -149,23 +131,6 @@ func (h multiHandler) WithGroup(name string) slog.Handler {
 	}
 	handler := NewMultiHandler(h.options, handlers...)
 	handler.futures = h.futures
-	return handler
-}
-
-// WithLevel returns a new handler with the given logging level set.
-//
-// In the case of a multi handler, any handler that implements the slogx.DynamicLevelHandler interface will return
-// a new handler with the level set accordingly.
-func (h multiHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
-	handlers := []slog.Handler{}
-	for _, handler := range h.handlers {
-		hnd := handler
-		if levelHandler, ok := handler.(slogx.DynamicLevelHandler); ok {
-			hnd = levelHandler.WithLevel(level)
-		}
-		handlers = append(handlers, hnd)
-	}
-	handler := NewMultiHandler(h.options, handlers...)
 	return handler
 }
 

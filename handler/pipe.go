@@ -4,8 +4,6 @@ import (
 	"context"
 
 	"log/slog"
-
-	"go.innotegrity.dev/slogx"
 )
 
 // pipeHandlerOptionsContext can be used to retrieve the options used by the handler from the context.
@@ -95,22 +93,6 @@ func (h *pipeHandler) Handle(ctx context.Context, r slog.Record) error {
 	return h.next.Handle(handlerCtx, r)
 }
 
-// Level returns the current logging level that is in use by the handler.
-//
-// In the case of a pipe handler, the level returned is that of next handler in the pipe if it implements the
-// slogx.DynamicLevelHandler interface or slogx.LevelPanic if not.
-func (h pipeHandler) Level() slogx.Level {
-	l := slogx.LevelPanic
-	if h.next != nil {
-		if levelHandler, ok := h.next.(slogx.DynamicLevelHandler); ok {
-			if levelHandler.Level() < l {
-				l = levelHandler.Level()
-			}
-		}
-	}
-	return l
-}
-
 // WithAttrs creates a new handler from the existing one adding the given attributes to it.
 //
 // If there is no next handler, the existing object is returned instead.
@@ -127,22 +109,6 @@ func (h pipeHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 func (h pipeHandler) WithGroup(name string) slog.Handler {
 	if h.next != nil {
 		return NewPipeHandler(h.options, h.next.WithGroup(name))
-	}
-	return &h
-}
-
-// WithLevel returns a new handler with the given logging level set.
-//
-// In the case of a pipe handler, if the next handler implements the slogx.DynamicLevelHandler interface, a new
-// handler with the level set accordingly will be set as the next handler.
-//
-// If there is no next handler or the next handler does not implement the slogx.DynamicLevelHandler interface, the
-// existing object is returned instead.
-func (h pipeHandler) WithLevel(level slogx.Level) slogx.DynamicLevelHandler {
-	if h.next != nil {
-		if levelHandler, ok := h.next.(slogx.DynamicLevelHandler); ok {
-			return NewPipeHandler(h.options, levelHandler.WithLevel(level))
-		}
 	}
 	return &h
 }

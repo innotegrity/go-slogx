@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync/atomic"
 
 	"log/slog"
 )
@@ -169,5 +170,51 @@ func (l *Level) parse(s string) error {
 		return fmt.Errorf("%s: unknown level", name)
 	}
 	*l += Level(offset)
+	return nil
+}
+
+// A LevelVar is a Level variable, to allow a Handler level to change dynamically.
+//
+// It implements Leveler as well as a Set method, and it is safe for use by multiple goroutines. The zero LevelVar
+// corresponds to LevelInfo.
+type LevelVar struct {
+	val atomic.Int64
+}
+
+// NewLevelVar returns a new object with the given level set.
+func NewLevelVar(l Level) *LevelVar {
+	lv := &LevelVar{}
+	lv.val.Store(int64(l))
+	return lv
+}
+
+// Level returns v's level.
+func (v *LevelVar) Level() Level {
+	return Level(int(v.val.Load()))
+}
+
+// Set sets v's level to l.
+func (v *LevelVar) Set(l Level) {
+	v.val.Store(int64(l))
+}
+
+func (v *LevelVar) String() string {
+	return fmt.Sprintf("LevelVar(%s)", v.Level())
+}
+
+// MarshalText implements [encoding.TextMarshaler]
+// by calling [Level.MarshalText].
+func (v *LevelVar) MarshalText() ([]byte, error) {
+	return v.Level().MarshalText()
+}
+
+// UnmarshalText implements [encoding.TextUnmarshaler]
+// by calling [Level.UnmarshalText].
+func (v *LevelVar) UnmarshalText(data []byte) error {
+	var l Level
+	if err := l.UnmarshalText(data); err != nil {
+		return err
+	}
+	v.Set(l)
 	return nil
 }

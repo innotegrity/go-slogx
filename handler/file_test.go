@@ -15,7 +15,7 @@ import (
 func TestFile1(t *testing.T) {
 	fileHandler, err := handler.NewFileHandler(handler.FileHandlerOptions{
 		Filename:    "test.log",
-		Level:       slogx.LevelTrace,
+		Level:       slogx.NewLevelVar(slogx.LevelTrace),
 		MaxFileSize: 100000,
 	})
 	if err != nil {
