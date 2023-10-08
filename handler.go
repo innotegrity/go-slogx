@@ -46,6 +46,30 @@ func HandlerFromContext(ctx context.Context, name string) slog.Handler {
 	return nil
 }
 
+// handlerLevelContextKey is used to store a handler's log level in a standard Go context object.
+type handlerLevelContextKey struct {
+	name string
+}
+
+// ContextWithHandlerLevel copies the given context and returns a new context with the given handler log level stored
+// in it with the given name.
+func ContextWithHandlerLevel(ctx context.Context, level *LevelVar, name string) context.Context {
+	return context.WithValue(ctx, handlerLevelContextKey{name: name}, level)
+}
+
+// HandlerLevelFromContext retrieves the handler log loeve stored in the given context with the given name, if
+// it exists.
+//
+// If the handler level cannot be found, nil is returned.
+func HandlerLevelFromContext(ctx context.Context, name string) *LevelVar {
+	if v := ctx.Value(handlerOptionsContextKey{name: name}); v != nil {
+		if level, ok := v.(*LevelVar); ok {
+			return level
+		}
+	}
+	return nil
+}
+
 // handlerOptionsContextKey is used to store a handler's options in a standard Go context object.
 type handlerOptionsContextKey struct {
 	name string
