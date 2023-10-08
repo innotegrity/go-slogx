@@ -4,7 +4,7 @@
 
 No unreleased changes
 
-## v0.5.1 (Released 2023-10-07)
+## v0.5.2 (Released 2023-10-08)
 
 * Added `LevelUnknown` level which can be used in cases where a level cannot be determined
 * Added `NilHandler` to simply discard all messages (as an alternative to setting a handler to `LevelNone`)

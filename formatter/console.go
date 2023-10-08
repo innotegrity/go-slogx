@@ -214,8 +214,8 @@ type consoleFormatter struct {
 func DefaultConsoleFormatter(colorize bool) *consoleFormatter {
 	options := DefaultConsoleFormatterOptions()
 	if colorize {
-		options.AttrFormatter = colorizeAttrFormatter
-		options.LevelFormatter = colorizeLevelFormatter
+		options.AttrFormatter = ColorizeAttrFormatter
+		options.LevelFormatter = ColorizeLevelFormatter
 		options.PartOrder = []ConsoleFormatterPart{
 			ConsoleFormatterTimePart,
 			ConsoleFormatterLevelPart,
@@ -225,9 +225,9 @@ func DefaultConsoleFormatter(colorize bool) *consoleFormatter {
 			ConsoleFormatterAttrPart("error"),
 			ConsoleFormatterAttrsPart,
 		}
-		options.SourceFormatter = colorizeSourceFormatter
+		options.SourceFormatter = ColorizeSourceFormatter
 		options.SpecificAttrFormatter = map[string]FormatAttrFn{
-			"error": colorizeErrorAttrFormatter,
+			"error": ColorizeErrorAttrFormatter,
 		}
 	}
 	return NewConsoleFormatter(options)
@@ -493,8 +493,8 @@ func (f consoleFormatter) printAttrs(ctx context.Context, buf *slogx.Buffer, lev
 	return nil
 }
 
-// colorizeAttrFormatter is a customized formatter for colorizing attribute keys.
-func colorizeAttrFormatter(ctx context.Context, level slog.Leveler, group, attrKey string,
+// ColorizeAttrFormatter is a customized formatter for colorizing attribute keys.
+func ColorizeAttrFormatter(ctx context.Context, level slog.Leveler, group, attrKey string,
 	attrValue slog.Value) (string, slog.Value, error) {
 
 	c := color.New(color.FgHiBlue)
@@ -504,8 +504,8 @@ func colorizeAttrFormatter(ctx context.Context, level slog.Leveler, group, attrK
 	return c.Sprint(attrKey), attrValue, nil
 }
 
-// colorizeErrorAttrFormatter is a customized formatter for colorizing error keys.
-func colorizeErrorAttrFormatter(ctx context.Context, level slog.Leveler, group, attrKey string,
+// ColorizeErrorAttrFormatter is a customized formatter for colorizing error keys.
+func ColorizeErrorAttrFormatter(ctx context.Context, level slog.Leveler, group, attrKey string,
 	attrValue slog.Value) (string, slog.Value, error) {
 
 	c := color.New(color.FgHiRed)
@@ -515,8 +515,8 @@ func colorizeErrorAttrFormatter(ctx context.Context, level slog.Leveler, group, 
 	return c.Sprint(attrKey), attrValue, nil
 }
 
-// colorizeLevelFormatter is a customized formatter for colorizing levels.
-func colorizeLevelFormatter(ctx context.Context, level slog.Leveler) (string, error) {
+// ColorizeLevelFormatter is a customized formatter for colorizing levels.
+func ColorizeLevelFormatter(ctx context.Context, level slog.Leveler) (string, error) {
 	var levelStr string
 	var c *color.Color
 	switch level {
@@ -554,8 +554,8 @@ func colorizeLevelFormatter(ctx context.Context, level slog.Leveler) (string, er
 	return c.Sprint(levelStr), nil
 }
 
-// colorizeSourceFormatter is a customized formatter for colorizing the source file and line.
-func colorizeSourceFormatter(ctx context.Context, level slog.Leveler, pc uintptr) (string, error) {
+// ColorizeSourceFormatter is a customized formatter for colorizing the source file and line.
+func ColorizeSourceFormatter(ctx context.Context, level slog.Leveler, pc uintptr) (string, error) {
 	f := runtimex.FrameFromPC(pc)
 	return color.New(color.FgHiWhite).Sprintf("%s", f), nil
 }
