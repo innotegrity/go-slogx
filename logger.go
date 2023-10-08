@@ -8,6 +8,17 @@ import (
 	"log/slog"
 )
 
+// loggerContextKey is used to store a Logger object in a standard Go context object.
+type loggerContextKey struct {
+	name string
+}
+
+// ContextWithLogger copies the given context and returns a new context with the given logger stored in it with
+// the given name.
+func ContextWithLogger(ctx context.Context, l *Logger, name string) context.Context {
+	return context.WithValue(ctx, loggerContextKey{name: name}, l)
+}
+
 // Shutdown will cleanup any open resources or pending goroutines being run in the handler(s) attached to the logger.
 func Shutdown(l *Logger, continueOnError bool) error {
 	if l == nil {
@@ -39,6 +50,18 @@ func Default() *Logger {
 	return &Logger{
 		Logger: slog.Default(),
 	}
+}
+
+// LoggerFromContext retrieves the logger object stored in the given context with the given name, if it exists.
+//
+// If the logger cannot be found, the default logger is returned instead.
+func LoggerFromContext(ctx context.Context, name string) *Logger {
+	if v := ctx.Value(loggerContextKey{name: name}); v != nil {
+		if l, ok := v.(*Logger); ok {
+			return l
+		}
+	}
+	return Default()
 }
 
 // Wrap simply wraps the slog.Logger in an slogx.Logger object.

@@ -159,6 +159,25 @@ type ConsoleFormatterOptions struct {
 	UniqueAttributesOnly bool
 }
 
+// ConsoleFormatterOptionsFromContext retrieves the formatter options from the context.
+//
+// If the options are not set in the context, a set of default options is returned instead.
+func ConsoleFormatterOptionsFromContext(ctx context.Context) *ConsoleFormatterOptions {
+	o := ctx.Value(consoleFormatterOptionsContext{})
+	if o != nil {
+		if opts, ok := o.(*ConsoleFormatterOptions); ok {
+			return opts
+		}
+	}
+	opts := DefaultConsoleFormatterOptions()
+	return &opts
+}
+
+// ContextWithConsoleFormatterOptions adds the options to the given context and returns the new context.
+func ContextWithConsoleFormatterOptions(ctx context.Context, opts ConsoleFormatterOptions) context.Context {
+	return context.WithValue(ctx, consoleFormatterOptionsContext{}, &opts)
+}
+
 // DefaultConsoleFormatterOptions returns a default set of options for the console formatter.
 func DefaultConsoleFormatterOptions() ConsoleFormatterOptions {
 	return ConsoleFormatterOptions{
@@ -181,25 +200,6 @@ func DefaultConsoleFormatterOptions() ConsoleFormatterOptions {
 		},
 		UniqueAttributesOnly: true,
 	}
-}
-
-// GetConsoleFormatterOptionsFromContext retrieves the options from the context.
-//
-// If the options are not set in the context, a set of default options is returned instead.
-func GetErrorOptionsFromContext(ctx context.Context) *ConsoleFormatterOptions {
-	o := ctx.Value(consoleFormatterOptionsContext{})
-	if o != nil {
-		if opts, ok := o.(*ConsoleFormatterOptions); ok {
-			return opts
-		}
-	}
-	opts := DefaultConsoleFormatterOptions()
-	return &opts
-}
-
-// AddToContext adds the options to the given context and returns the new context.
-func (o *ConsoleFormatterOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, consoleFormatterOptionsContext{}, o)
 }
 
 // consoleFormatter formats records for output to a console such as stdout, stderr or even a file.
@@ -282,7 +282,7 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 	var err error
 	var strVal string
 	buf := slogx.NewBuffer()
-	handlerCtx := f.options.AddToContext(ctx)
+	formatterCtx := ContextWithConsoleFormatterOptions(ctx, f.options)
 
 	// flatten attributes
 	var attrMap map[string]slog.Value
@@ -307,15 +307,15 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 
 		switch part {
 		case ConsoleFormatterAttrsPart:
-			if err = f.printAttrs(handlerCtx, buf, level, attrs, printedAttrs); err != nil {
+			if err = f.printAttrs(formatterCtx, buf, level, attrs, printedAttrs); err != nil {
 				return nil, err
 			}
 
 		case ConsoleFormatterLevelPart:
 			if f.options.LevelFormatter != nil {
-				strVal, err = f.options.LevelFormatter(handlerCtx, level)
+				strVal, err = f.options.LevelFormatter(formatterCtx, level)
 			} else {
-				strVal, err = FormatLevelValueDefault(handlerCtx, level)
+				strVal, err = FormatLevelValueDefault(formatterCtx, level)
 			}
 			if err != nil {
 				return nil, err
@@ -324,7 +324,7 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 
 		case ConsoleFormatterMessagePart:
 			if f.options.MessageFormatter != nil {
-				strVal, err = f.options.MessageFormatter(handlerCtx, level, msg)
+				strVal, err = f.options.MessageFormatter(formatterCtx, level, msg)
 			} else {
 				strVal = msg
 				err = nil
@@ -336,9 +336,9 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 
 		case ConsoleFormatterSourcePart:
 			if f.options.SourceFormatter != nil {
-				strVal, err = f.options.SourceFormatter(handlerCtx, level, pc)
+				strVal, err = f.options.SourceFormatter(formatterCtx, level, pc)
 			} else {
-				strVal, err = FormatSourceValueDefault(handlerCtx, level, pc)
+				strVal, err = FormatSourceValueDefault(formatterCtx, level, pc)
 			}
 			if err != nil {
 				return nil, err
@@ -347,9 +347,9 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 
 		case ConsoleFormatterTimePart:
 			if f.options.TimeFormatter != nil {
-				strVal, err = f.options.TimeFormatter(handlerCtx, level, timestamp)
+				strVal, err = f.options.TimeFormatter(formatterCtx, level, timestamp)
 			} else {
-				strVal, err = FormatTimeValueDefault(handlerCtx, level, timestamp)
+				strVal, err = FormatTimeValueDefault(formatterCtx, level, timestamp)
 			}
 			if err != nil {
 				return nil, err
@@ -365,7 +365,7 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 					attrMap = slogx.ToAttrMap(attrs)
 				}
 				if val, ok := attrMap[attr]; ok {
-					if err = f.printAttr(handlerCtx, buf, level, attr, val, printedAttrs); err != nil {
+					if err = f.printAttr(formatterCtx, buf, level, attr, val, printedAttrs); err != nil {
 						return nil, err
 					}
 				}

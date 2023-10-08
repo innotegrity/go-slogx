@@ -139,6 +139,11 @@ func (h consoleHandler) Shutdown(continueOnError bool) error {
 	return nil
 }
 
+// Level returns a pointer to the handler's level for updating.
+func (h consoleHandler) Level() *slogx.LevelVar {
+	return h.options.Level
+}
+
 // WithAttrs creates a new handler from the existing one adding the given attributes to it.
 func (h consoleHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 	newHandler := &consoleHandler{

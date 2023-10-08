@@ -70,15 +70,10 @@ type ConditionalHandlerOptions struct {
 	EnableAsync bool
 }
 
-// DefaultConditionalHandlerOptions returns a default set of options for the handler.
-func DefaultConditionalHandlerOptions() ConditionalHandlerOptions {
-	return ConditionalHandlerOptions{}
-}
-
-// GetConditionalHandlerOptionsFromContext retrieves the options from the context.
+// ConditionalHandlerOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetConditionalHandlerOptionsFromContext(ctx context.Context) *ConditionalHandlerOptions {
+func ConditionalHandlerOptionsFromContext(ctx context.Context) *ConditionalHandlerOptions {
 	o := ctx.Value(conditionalHandlerOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*ConditionalHandlerOptions); ok {
@@ -89,9 +84,14 @@ func GetConditionalHandlerOptionsFromContext(ctx context.Context) *ConditionalHa
 	return &opts
 }
 
-// AddToContext adds the options to the given context and returns the new context.
-func (o *ConditionalHandlerOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, conditionalHandlerOptionsContext{}, o)
+// ContextWithConditionalHandlerOptions adds the options to the given context and returns the new context.
+func ContextWithConditionalHandlerOptions(ctx context.Context, opts ConditionalHandlerOptions) context.Context {
+	return context.WithValue(ctx, conditionalHandlerOptionsContext{}, &opts)
+}
+
+// DefaultConditionalHandlerOptions returns a default set of options for the handler.
+func DefaultConditionalHandlerOptions() ConditionalHandlerOptions {
+	return ConditionalHandlerOptions{}
 }
 
 // conditionalHandler sends the log message to any handler for which the record being logged matches one or more
@@ -123,7 +123,7 @@ func (h conditionalHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle is responsible for finding one or more matching handlers to write the record to.
 func (h *conditionalHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithConditionalHandlerOptions(ctx, h.options)
 	if !h.options.EnableAsync {
 		return h.handle(handlerCtx, r)
 	}

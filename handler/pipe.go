@@ -29,10 +29,10 @@ func DefaultPipeHandlerOptions() PipeHandlerOptions {
 	}
 }
 
-// GetPipeHandlerOptionsFromContext retrieves the options from the context.
+// PipeHandlerOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetPipeHandlerOptionsFromContext(ctx context.Context) *PipeHandlerOptions {
+func PipeHandlerOptionsFromContext(ctx context.Context) *PipeHandlerOptions {
 	o := ctx.Value(pipeHandlerOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*PipeHandlerOptions); ok {
@@ -43,9 +43,9 @@ func GetPipeHandlerOptionsFromContext(ctx context.Context) *PipeHandlerOptions {
 	return &opts
 }
 
-// AddToContext adds the options to the given context and returns the new context.
-func (o *PipeHandlerOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, pipeHandlerOptionsContext{}, o)
+// ContextWithPipeHandlerOptions adds the options to the given context and returns the new context.
+func ContextWithPipeHandlerOptions(ctx context.Context, opts PipeHandlerOptions) context.Context {
+	return context.WithValue(ctx, pipeHandlerOptionsContext{}, &opts)
 }
 
 // pipeHandler is a handler which sends the record through one or more functions before passing it onto the next handler.
@@ -65,7 +65,7 @@ func NewPipeHandler(opts PipeHandlerOptions, next slog.Handler) *pipeHandler {
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h pipeHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithPipeHandlerOptions(ctx, h.options)
 	if h.next == nil {
 		return false
 	}
@@ -74,7 +74,7 @@ func (h pipeHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle runs the record through all of the pipe functions and then sends it on to the next handler.
 func (h *pipeHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithPipeHandlerOptions(ctx, h.options)
 	if h.next == nil {
 		return nil
 	}

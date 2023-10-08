@@ -34,10 +34,10 @@ func DefaultMultiHandlerOptions() MultiHandlerOptions {
 	return MultiHandlerOptions{}
 }
 
-// GetMultiHandlerOptionsFromContext retrieves the options from the context.
+// MultiHandlerOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetMultiHandlerOptionsFromContext(ctx context.Context) *MultiHandlerOptions {
+func MultiHandlerOptionsFromContext(ctx context.Context) *MultiHandlerOptions {
 	o := ctx.Value(multiHandlerOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*MultiHandlerOptions); ok {
@@ -48,9 +48,9 @@ func GetMultiHandlerOptionsFromContext(ctx context.Context) *MultiHandlerOptions
 	return &opts
 }
 
-// AddToContext adds the options to the given context and returns the new context.
-func (o *MultiHandlerOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, multiHandlerOptionsContext{}, o)
+// ContextWithMultiHandlerOptions adds the options to the given context and returns the new context.
+func ContextWithMultiHandlerOptions(ctx context.Context, opts MultiHandlerOptions) context.Context {
+	return context.WithValue(ctx, multiHandlerOptionsContext{}, &opts)
 }
 
 // multiHandler sends the log message to multiple handlers.
@@ -72,7 +72,7 @@ func NewMultiHandler(opts MultiHandlerOptions, handler ...slog.Handler) *multiHa
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h multiHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithMultiHandlerOptions(ctx, h.options)
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, l) {
 			return true
@@ -83,7 +83,7 @@ func (h multiHandler) Enabled(ctx context.Context, l slog.Level) bool {
 
 // Handle is responsible for writing the record to each and every handler.
 func (h *multiHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithMultiHandlerOptions(ctx, h.options)
 	if !h.options.EnableAsync {
 		return h.handle(handlerCtx, r)
 	}

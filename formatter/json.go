@@ -125,6 +125,11 @@ type JSONFormatterOptions struct {
 	TimeFormatter FormatTimeValueFn
 }
 
+// ContextWithJSONFormatterOptions adds the options to the given context and returns the new context.
+func ContextWithJSONFormatterOptions(ctx context.Context, opts JSONFormatterOptions) context.Context {
+	return context.WithValue(ctx, jsonFormatterOptionsContext{}, &opts)
+}
+
 // DefaultJSONFormatterOptions returns a default set of options for the JSON formatter.
 func DefaultJSONFormatterOptions() JSONFormatterOptions {
 	return JSONFormatterOptions{
@@ -145,10 +150,10 @@ func DefaultJSONFormatterOptions() JSONFormatterOptions {
 	}
 }
 
-// GetJSONFormatterOptionsFromContext retrieves the options from the context.
+// JSONFormatterOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetJSONFormatterOptionsFromContext(ctx context.Context) *JSONFormatterOptions {
+func JSONFormatterOptionsFromContext(ctx context.Context) *JSONFormatterOptions {
 	o := ctx.Value(jsonFormatterOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*JSONFormatterOptions); ok {
@@ -157,11 +162,6 @@ func GetJSONFormatterOptionsFromContext(ctx context.Context) *JSONFormatterOptio
 	}
 	opts := DefaultJSONFormatterOptions()
 	return &opts
-}
-
-// AddToContext adds the options to the given context and returns the new context.
-func (o *JSONFormatterOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, jsonFormatterOptionsContext{}, o)
 }
 
 // jsonFormatter formats records for output as JSON.
@@ -220,16 +220,16 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 	var err error
 	var strVal string
 	buf := slogx.NewBuffer()
-	handlerCtx := f.options.AddToContext(ctx)
+	formatterCtx := ContextWithJSONFormatterOptions(ctx, f.options)
 
 	// open the JSON
 	buf.WriteByte('{')
 
 	// write the time
 	if f.options.TimeFormatter != nil {
-		strVal, err = f.options.TimeFormatter(handlerCtx, level, timestamp)
+		strVal, err = f.options.TimeFormatter(formatterCtx, level, timestamp)
 	} else {
-		strVal, err = FormatTimeValueDefault(handlerCtx, level, timestamp)
+		strVal, err = FormatTimeValueDefault(formatterCtx, level, timestamp)
 	}
 	if err != nil {
 		return nil, err
@@ -238,9 +238,9 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 
 	// write the level
 	if f.options.LevelFormatter != nil {
-		strVal, err = f.options.LevelFormatter(handlerCtx, level)
+		strVal, err = f.options.LevelFormatter(formatterCtx, level)
 	} else {
-		strVal, err = FormatLevelValueDefault(handlerCtx, level)
+		strVal, err = FormatLevelValueDefault(formatterCtx, level)
 	}
 	if err != nil {
 		return nil, err
@@ -253,9 +253,9 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 	// add source to attribute list, if enabled
 	if f.options.IncludeSource {
 		if f.options.SourceFormatter != nil {
-			strVal, err = f.options.SourceFormatter(handlerCtx, level, pc)
+			strVal, err = f.options.SourceFormatter(formatterCtx, level, pc)
 		} else {
-			strVal, err = FormatSourceValueDefault(handlerCtx, level, pc)
+			strVal, err = FormatSourceValueDefault(formatterCtx, level, pc)
 		}
 		if err != nil {
 			return nil, err
@@ -268,7 +268,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 
 	// add message to attribute list
 	if f.options.MessageFormatter != nil {
-		strVal, err = f.options.MessageFormatter(handlerCtx, level, msg)
+		strVal, err = f.options.MessageFormatter(formatterCtx, level, msg)
 	} else {
 		strVal = msg
 		err = nil
@@ -294,7 +294,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 		fmt.Fprintf(buf, `"%s":{`, f.options.NestedAttributeAttr)
 		count := 0
 		for _, attr := range attrs {
-			if err := f.formatAttr(handlerCtx, buf, level, "", attr.Key, attr.Value, count > 0); err != nil {
+			if err := f.formatAttr(formatterCtx, buf, level, "", attr.Key, attr.Value, count > 0); err != nil {
 				return nil, err
 			}
 			count++
@@ -302,7 +302,7 @@ func (f *jsonFormatter) FormatRecord(ctx context.Context, timestamp time.Time, l
 		buf.WriteByte('}')
 	} else {
 		for _, attr := range attrs {
-			if err := f.formatAttr(handlerCtx, buf, level, "", attr.Key, attr.Value, buf.Len() > 2); err != nil {
+			if err := f.formatAttr(formatterCtx, buf, level, "", attr.Key, attr.Value, buf.Len() > 2); err != nil {
 				return nil, err
 			}
 		}

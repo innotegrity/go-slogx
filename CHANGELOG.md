@@ -4,12 +4,14 @@
 
 No unreleased changes
 
-## v0.4.1 (Released 2023-10-07)
+## v0.5.0 (Released 2023-10-07)
 
 * Added `LevelUnknown` level which can be used in cases where a level cannot be determined
 * Added `NilHandler` to simply discard all messages (as an alternative to setting a handler to `LevelNone`)
 * Changed built-in handlers to use `LevelVar` for level so they can be changed dynamically
 * Added ability to store logger and handlers in context by name in order to store multiple loggers and/or handlers within the same context
+* Added `LevelVarHandler` interface for more easily accessing a handler's dynamic level stored in its options
+* Refactored formatter and handler option context functions
   
 ## v0.3.2 (Released 2023-10-06)
 

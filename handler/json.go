@@ -124,6 +124,11 @@ func (h *jsonHandler) Handle(ctx context.Context, r slog.Record) error {
 	return err
 }
 
+// Level returns a pointer to the handler's level for updating.
+func (h jsonHandler) Level() *slogx.LevelVar {
+	return h.options.Level
+}
+
 // Shutdown is responsible for cleaning up resources used by the handler.
 func (h jsonHandler) Shutdown(continueOnError bool) error {
 	if w, ok := h.options.Writer.(io.WriteCloser); ok {

@@ -59,6 +59,11 @@ type FileHandlerOptions struct {
 	RecordFormatter formatter.BufferFormatter
 }
 
+// ContextWithFileHandlerOptions adds the options to the given context and returns the new context.
+func ContextWithFileHandlerOptions(ctx context.Context, opts FileHandlerOptions) context.Context {
+	return context.WithValue(ctx, fileHandlerOptionsContext{}, &opts)
+}
+
 // DefaultFileHandlerOptions returns a default set of options for the handler.
 func DefaultFileHandlerOptions() FileHandlerOptions {
 	return FileHandlerOptions{
@@ -71,10 +76,10 @@ func DefaultFileHandlerOptions() FileHandlerOptions {
 	}
 }
 
-// GetFileHandlerOptionsFromContext retrieves the options from the context.
+// FileHandlerOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetFileHandlerOptionsFromContext(ctx context.Context) *FileHandlerOptions {
+func FileHandlerOptionsFromContext(ctx context.Context) *FileHandlerOptions {
 	o := ctx.Value(fileHandlerOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*FileHandlerOptions); ok {
@@ -83,11 +88,6 @@ func GetFileHandlerOptionsFromContext(ctx context.Context) *FileHandlerOptions {
 	}
 	opts := DefaultFileHandlerOptions()
 	return &opts
-}
-
-// AddToContext adds the options to the given context and returns the new context.
-func (o *FileHandlerOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, fileHandlerOptionsContext{}, o)
 }
 
 // fileHandler is a log handler that writes records to a file.
@@ -146,7 +146,7 @@ func (h fileHandler) Enabled(ctx context.Context, level slog.Level) bool {
 // Any attributes duplicated between the handler and record, including within groups, are automaticlaly removed.
 // If a duplicate is encountered, the last value found will be used for the attribute's value.
 func (h *fileHandler) Handle(ctx context.Context, r slog.Record) error {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithFileHandlerOptions(ctx, h.options)
 	attrs := slogx.ConsolidateAttrs(h.attrs, h.activeGroup, r)
 
 	// format the output into a buffer
@@ -165,6 +165,11 @@ func (h *fileHandler) Handle(ctx context.Context, r slog.Record) error {
 
 	// write the buffer to the file
 	return h.write(buf)
+}
+
+// Level returns a pointer to the handler's level for updating.
+func (h fileHandler) Level() *slogx.LevelVar {
+	return h.options.Level
 }
 
 // Shutdown is responsible for cleaning up resources used by the handler.

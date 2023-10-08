@@ -22,10 +22,10 @@ func DefaultRoundRobinHandlerOptions() RoundRobinHandlerOptions {
 	return RoundRobinHandlerOptions{}
 }
 
-// GetRoundRobinHandlerOptionsFromContext retrieves the options from the context.
+// RoundRobinHandlerOptionsFromContext retrieves the options from the context.
 //
 // If the options are not set in the context, a set of default options is returned instead.
-func GetRoundRobinHandlerOptionsFromContext(ctx context.Context) *RoundRobinHandlerOptions {
+func RoundRobinHandlerOptionsFromContext(ctx context.Context) *RoundRobinHandlerOptions {
 	o := ctx.Value(roundRobinHandlerOptionsContext{})
 	if o != nil {
 		if opts, ok := o.(*RoundRobinHandlerOptions); ok {
@@ -36,9 +36,9 @@ func GetRoundRobinHandlerOptionsFromContext(ctx context.Context) *RoundRobinHand
 	return &opts
 }
 
-// AddToContext adds the options to the given context and returns the new context.
-func (o *RoundRobinHandlerOptions) AddToContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, roundRobinHandlerOptionsContext{}, o)
+// ContextWithRoundRobinHandlerOptions adds the options to the given context and returns the new context.
+func ContextWithRoundRobinHandlerOptions(ctx context.Context, opts RoundRobinHandlerOptions) context.Context {
+	return context.WithValue(ctx, roundRobinHandlerOptionsContext{}, &opts)
 }
 
 // roundRobinHandler simply sends the log message to the next available handler after whichever handler was last used
@@ -61,7 +61,7 @@ func NewRoundRobinHandler(opts RoundRobinHandlerOptions, handlers ...slog.Handle
 
 // Enabled determines whether or not the given level is enabled for any handler.
 func (h roundRobinHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithRoundRobinHandlerOptions(ctx, h.options)
 	for _, handler := range h.handlers {
 		if handler.Enabled(handlerCtx, l) {
 			return true
@@ -75,7 +75,7 @@ func (h roundRobinHandler) Enabled(ctx context.Context, l slog.Level) bool {
 func (h *roundRobinHandler) Handle(ctx context.Context, r slog.Record) error {
 	var err error
 	handlers := append(h.handlers[h.lastIndex:], h.handlers[:h.lastIndex]...)
-	handlerCtx := h.options.AddToContext(ctx)
+	handlerCtx := ContextWithRoundRobinHandlerOptions(ctx, h.options)
 
 	for i, handler := range handlers {
 		if handler.Enabled(handlerCtx, r.Level) {
