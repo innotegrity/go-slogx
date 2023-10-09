@@ -115,8 +115,7 @@ func NewConditionalHandler(opts ConditionalHandlerOptions, cond ...*condition) *
 	}
 }
 
-// Enabled always returns true for this handler as there is no way for it to test whether or not a handler
-// would be enabled without passing in a record.
+// Enabled always returns true for this handler as this functionality is handled directly by the Handle function.
 func (h conditionalHandler) Enabled(ctx context.Context, l slog.Level) bool {
 	return true
 }
@@ -177,7 +176,7 @@ func (h conditionalHandler) WithGroup(name string) slog.Handler {
 // handle is responsible for actually writing the record to the appropriate handler(s).
 func (h conditionalHandler) handle(ctx context.Context, r slog.Record) error {
 	for _, c := range h.conditions {
-		if h.matchesAll(ctx, r, c.matcherFns) {
+		if h.matchesAll(ctx, r, c.matcherFns) && c.handler.Enabled(ctx, r.Level) {
 			if err := c.handler.Handle(ctx, r); err != nil && !h.options.ContinueOnError {
 				return err
 			}

@@ -70,15 +70,9 @@ func NewMultiHandler(opts MultiHandlerOptions, handler ...slog.Handler) *multiHa
 	}
 }
 
-// Enabled determines whether or not the given level is enabled for any handler.
+// Enabled always returns true for this handler as this functionality is handled directly by the Handle function.
 func (h multiHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := ContextWithMultiHandlerOptions(ctx, h.options)
-	for _, handler := range h.handlers {
-		if handler.Enabled(handlerCtx, l) {
-			return true
-		}
-	}
-	return false
+	return true
 }
 
 // Handle is responsible for writing the record to each and every handler.
@@ -137,8 +131,10 @@ func (h multiHandler) WithGroup(name string) slog.Handler {
 // handle is responsible for actually writing the record to the appropriate handler(s).
 func (h multiHandler) handle(ctx context.Context, r slog.Record) error {
 	for _, handler := range h.handlers {
-		if err := handler.Handle(ctx, r); err != nil && !h.options.ContinueOnError {
-			return err
+		if handler.Enabled(ctx, r.Level) {
+			if err := handler.Handle(ctx, r); err != nil && !h.options.ContinueOnError {
+				return err
+			}
 		}
 	}
 	return nil

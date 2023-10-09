@@ -59,15 +59,9 @@ func NewRoundRobinHandler(opts RoundRobinHandlerOptions, handlers ...slog.Handle
 	}
 }
 
-// Enabled determines whether or not the given level is enabled for any handler.
+// Enabled always returns true for this handler as this functionality is handled directly by the Handle function.
 func (h roundRobinHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := ContextWithRoundRobinHandlerOptions(ctx, h.options)
-	for _, handler := range h.handlers {
-		if handler.Enabled(handlerCtx, l) {
-			return true
-		}
-	}
-	return false
+	return true
 }
 
 // Handle is responsible for finding the next available handler after the last previously used handler to write the

@@ -34,20 +34,37 @@ const (
 
 	// consoleFormatterAttrPart is the prefix prepended to a specific attribute in PartOrder.
 	consoleFormatterAttrPart = "attr:"
+
+	// consoleFormatterAttrRegexPart is the prefix prepended to an attribute regular expression in PartOrder.
+	consoleFormatterAttrRegexPart = "attrexpr:"
 )
 
 // ConsoleFormatterPart is just a string.
 type ConsoleFormatterPart string
 
-// IsAnySpecificAttrPart indicates whether or not this part is for a specific attribute.
-func (p ConsoleFormatterPart) IsSpecificAttrPart() bool {
+// IsRegexAttrPart indicates whether or not this part is for attributes matching a regular expression.
+func (p ConsoleFormatterPart) IsRegexAttr() bool {
+	return strings.HasPrefix(string(p), consoleFormatterAttrRegexPart)
+}
+
+// IsSpecificAttr indicates whether or not this part is for a specific attribute.
+func (p ConsoleFormatterPart) IsSpecificAttr() bool {
 	return strings.HasPrefix(string(p), consoleFormatterAttrPart)
 }
 
-// GetSpecificAttr returns the name of the specific attribute if this part is for a specific attribute. Otherwise
-// it returns an empty string.
-func (p ConsoleFormatterPart) GetSpecificAttr() string {
-	if !p.IsSpecificAttrPart() {
+// GetAttrRegex returns the regular expression to use when matching attributes attribute if this part contains a
+// regular expression. Otherwise it returns an empty string.
+func (p ConsoleFormatterPart) GetAttrRegex() string {
+	if !p.IsRegexAttr() {
+		return ""
+	}
+	return string(p)[len(consoleFormatterAttrRegexPart):]
+}
+
+// GetAttr returns the name of the specific attribute if this part is for a specific attribute. Otherwise it returns
+// an empty string.
+func (p ConsoleFormatterPart) GetAttr() string {
+	if !p.IsSpecificAttr() {
 		return ""
 	}
 	return string(p)[len(consoleFormatterAttrPart):]
@@ -56,6 +73,11 @@ func (p ConsoleFormatterPart) GetSpecificAttr() string {
 // ConsoleFormatterAttrPart is the part used by PartOrder for a specific attribute.
 func ConsoleFormatterAttrPart(attrKey string) ConsoleFormatterPart {
 	return ConsoleFormatterPart(fmt.Sprintf("%s%s", consoleFormatterAttrPart, attrKey))
+}
+
+// ConsoleFormatterAttrRegexPart is the part used by PartOrder for an attribute regular expression.
+func ConsoleFormatterAttrRegexPart(attrKey string) ConsoleFormatterPart {
+	return ConsoleFormatterPart(fmt.Sprintf("%s%s", consoleFormatterAttrRegexPart, attrKey))
 }
 
 // consoleFormatterOptionsContext can be used to retrieve the options used by the formatter from the context.
@@ -97,6 +119,9 @@ type ConsoleFormatterOptions struct {
 	// The following values are valid for the string:
 	// ConsoleFormatterAttrPart - specific attribute to print; use a single period (.) to separate group name from
 	//                            attribute name if the attribute is nested within a group
+	// ConsoleFormatterAttrRegexPart - attributes matching the regular expression to print; use an escaped period (\.)
+	//                                 to separate group name from attribute name if the attribute is nested within a
+	//                                 group; if the regex does not compile, it is ignored
 	// ConsoleFormatterAttrsPart - all attributes
 	// ConsoleFormatterLevelPart - the log level of the message from the record as a string
 	// ConsoleFormatterMessagePart - the message from the record
@@ -190,6 +215,7 @@ func DefaultConsoleFormatterOptions() ConsoleFormatterOptions {
 			">",
 			ConsoleFormatterMessagePart,
 			ConsoleFormatterAttrPart("error"),
+			ConsoleFormatterAttrRegexPart(`error\..*`),
 			ConsoleFormatterAttrsPart,
 		},
 		PartSeparator:   " ",
@@ -224,6 +250,7 @@ func DefaultConsoleFormatter(colorize bool) *consoleFormatter {
 			ConsoleFormatterPart(color.New(color.FgHiWhite).Sprint(">")),
 			ConsoleFormatterMessagePart,
 			ConsoleFormatterAttrPart("error"),
+			ConsoleFormatterAttrRegexPart(`error\..*`),
 			ConsoleFormatterAttrsPart,
 		}
 		options.SourceFormatter = ColorizeSourceFormatter
@@ -245,6 +272,7 @@ func NewConsoleFormatter(opts ConsoleFormatterOptions) *consoleFormatter {
 			">",
 			ConsoleFormatterMessagePart,
 			ConsoleFormatterAttrPart("error"),
+			ConsoleFormatterAttrRegexPart(`error\..*`),
 			ConsoleFormatterAttrsPart,
 		}
 	}
@@ -259,7 +287,7 @@ func NewConsoleFormatter(opts ConsoleFormatterOptions) *consoleFormatter {
 		willPrintAttrs:      false,
 	}
 	for _, p := range opts.PartOrder {
-		if p.IsSpecificAttrPart() || p == ConsoleFormatterAttrsPart {
+		if p.IsSpecificAttr() || p.IsRegexAttr() || p == ConsoleFormatterAttrsPart {
 			f.willPrintAttrs = true
 		}
 	}
@@ -358,18 +386,34 @@ func (f *consoleFormatter) FormatRecord(ctx context.Context, timestamp time.Time
 			fmt.Fprintf(buf, "%s", strVal)
 
 		default:
-			attr := part.GetSpecificAttr()
-			if attr == "" { // raw string without formatting
-				fmt.Fprint(buf, part)
-			} else { // specific attribute
-				if len(attrMap) == 0 {
-					attrMap = slogx.ToAttrMap(attrs)
-				}
+			if len(attrMap) == 0 {
+				attrMap = slogx.ToAttrMap(attrs)
+			}
+			if attr := part.GetAttr(); attr != "" { // specific attribute
 				if val, ok := attrMap[attr]; ok {
 					if err = f.printAttr(formatterCtx, buf, level, attr, val, printedAttrs); err != nil {
 						return nil, err
 					}
 				}
+			} else if attrRegex := part.GetAttrRegex(); attrRegex != "" { // attribute regex
+				regex, err := regexp.Compile(attrRegex)
+				if err == nil {
+					for attr, val := range attrMap {
+						currentBufLen = buf.Len()
+						if currentBufLen > 0 && currentBufLen != lastBufLen {
+							fmt.Fprintf(buf, "%s", f.options.PartSeparator)
+							currentBufLen = buf.Len()
+						}
+						lastBufLen = currentBufLen
+						if regex.MatchString(attr) {
+							if err := f.printAttr(formatterCtx, buf, level, attr, val, printedAttrs); err != nil {
+								return nil, err
+							}
+						}
+					}
+				}
+			} else { // raw string without formatting
+				fmt.Fprint(buf, part)
 			}
 		}
 	}

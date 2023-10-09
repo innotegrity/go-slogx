@@ -68,6 +68,7 @@ func ErrX(key string, value errorx.Error) slog.Attr {
 	if err != nil {
 		attrs = append(attrs, slog.String("internal_error", err.Error()))
 	}
+
 	// add any attributes from the error
 	errorAttrs := []any{}
 	for k, v := range value.Attrs() {

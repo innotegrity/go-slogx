@@ -63,7 +63,7 @@ func NewPipeHandler(opts PipeHandlerOptions, next slog.Handler) *pipeHandler {
 	}
 }
 
-// Enabled determines whether or not the given level is enabled for any handler.
+// Enabled returns whether or not the next handler would log this message.
 func (h pipeHandler) Enabled(ctx context.Context, l slog.Level) bool {
 	handlerCtx := ContextWithPipeHandlerOptions(ctx, h.options)
 	if h.next == nil {

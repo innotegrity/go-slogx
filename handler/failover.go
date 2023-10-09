@@ -56,15 +56,9 @@ func NewFailoverHandler(opts FailoverHandlerOptions, handlers ...slog.Handler) *
 	}
 }
 
-// Enabled determines whether or not the given level is enabled for any handler.
+// Enabled always returns true for this handler as this functionality is handled directly by the Handle function.
 func (h failoverHandler) Enabled(ctx context.Context, l slog.Level) bool {
-	handlerCtx := ContextWithFailoverHandlerOptions(ctx, h.options)
-	for _, handler := range h.handlers {
-		if handler.Enabled(handlerCtx, l) {
-			return true
-		}
-	}
-	return false
+	return true
 }
 
 // Handle is responsible for finding the first available handler to write the record.

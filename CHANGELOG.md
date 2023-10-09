@@ -4,6 +4,11 @@
 
 No unreleased changes
 
+## v0.5.3 (Released 2023-xx-xx)
+
+* Added capabilities to use regular expressions for console formatter parts
+* Fixed bug in `Enable` and `Handle` functions with conditional, failover, multi, pipe and round robin handlers where messages below log level threshold would still be logged
+
 ## v0.5.2 (Released 2023-10-08)
 
 * Added `LevelUnknown` level which can be used in cases where a level cannot be determined
