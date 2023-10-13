@@ -8,6 +8,7 @@ No unreleased changes
 
 * Added capabilities to use regular expressions for console formatter parts
 * Fixed bug in `Enable` and `Handle` functions with conditional, failover, multi, pipe and round robin handlers where messages below log level threshold would still be logged
+* Added `HTTPHandler` for sending messages via HTTP POST requests
 
 ## v0.5.2 (Released 2023-10-08)
 

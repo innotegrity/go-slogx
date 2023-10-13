@@ -12,7 +12,7 @@ import (
 	"go.innotegrity.dev/slogx/handler"
 )
 
-func TestFile1(t *testing.T) {
+func TestFileHandler(t *testing.T) {
 	fileHandler, err := handler.NewFileHandler(handler.FileHandlerOptions{
 		Filename:    "test.log",
 		Level:       slogx.NewLevelVar(slogx.LevelTrace),

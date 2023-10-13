@@ -4,6 +4,7 @@ go 1.21
 
 require (
 	github.com/fatih/color v1.15.0
+	github.com/go-resty/resty/v2 v2.9.1
 	github.com/mattn/go-colorable v0.1.13
 	go.innotegrity.dev/async v0.1.1
 	go.innotegrity.dev/errorx v1.0.15
@@ -13,5 +14,6 @@ require (
 
 require (
 	github.com/mattn/go-isatty v0.0.17 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/net v0.15.0 // indirect
+	golang.org/x/sys v0.12.0 // indirect
 )
