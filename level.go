@@ -12,16 +12,18 @@ import (
 
 // Extended log levels in addition to the standard ones.
 const (
-	LevelNone    = Level(-2147483648)
-	LevelUnknown = Level(-2147483647)
-	LevelTrace   = Level(-8)
-	LevelDebug   = Level(slog.LevelDebug)
-	LevelInfo    = Level(slog.LevelInfo)
-	LevelNotice  = Level(2)
-	LevelWarn    = Level(slog.LevelWarn)
-	LevelError   = Level(slog.LevelError)
-	LevelFatal   = Level(12)
-	LevelPanic   = Level(16)
+	LevelMin      = Level(-2147483648)
+	LevelUnknown  = LevelMin
+	LevelTrace    = Level(-8)
+	LevelDebug    = Level(slog.LevelDebug)
+	LevelInfo     = Level(slog.LevelInfo)
+	LevelNotice   = Level(2)
+	LevelWarn     = Level(slog.LevelWarn)
+	LevelError    = Level(slog.LevelError)
+	LevelFatal    = Level(12)
+	LevelPanic    = Level(16)
+	LevelMax      = Level(2147483647)
+	LevelDisabled = LevelMax
 )
 
 // Level is just an integer
@@ -60,8 +62,10 @@ func (l Level) ShortString() string {
 	}
 
 	switch {
-	case l == LevelNone:
-		return str("NON", 0)
+	case l == LevelMin:
+		return str("MIN", 0)
+	case l == LevelMax:
+		return str("MAX", 0)
 	case l <= LevelTrace:
 		return str("TRC", l-LevelTrace)
 	case l <= LevelDebug:
@@ -99,8 +103,10 @@ func (l Level) String() string {
 	}
 
 	switch {
-	case l == LevelNone:
-		return str("NONE", 0)
+	case l == LevelMin:
+		return str("MIN", 0)
+	case l == LevelMax:
+		return str("MAX", 0)
 	case l <= LevelTrace:
 		return str("TRACE", l-LevelTrace)
 	case l <= LevelDebug:
@@ -148,23 +154,25 @@ func (l *Level) parse(s string) error {
 	}
 
 	switch strings.ToUpper(name) {
-	case "NONE":
-		*l = LevelNone
-	case "TRACE":
+	case "MIN", "UNK", "UNKNOWN":
+		*l = LevelMin
+	case "MAX", "DIS", "DISABLED":
+		*l = LevelMax
+	case "TRC", "TRACE":
 		*l = LevelTrace
-	case "DEBUG":
+	case "DBG", "DEBUG":
 		*l = LevelDebug
-	case "INFO":
+	case "INF", "INFO":
 		*l = LevelInfo
-	case "NOTICE":
+	case "NOT", "NOTICE":
 		*l = LevelNotice
-	case "WARN", "WARNING":
+	case "WRN", "WARN", "WARNING":
 		*l = LevelWarn
 	case "ERR", "ERROR":
 		*l = LevelError
-	case "FATAL":
+	case "FTL", "FATAL":
 		*l = LevelFatal
-	case "PANIC":
+	case "PAN", "PANIC":
 		*l = LevelPanic
 	default:
 		return fmt.Errorf("%s: unknown level", name)

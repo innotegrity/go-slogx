@@ -9,6 +9,11 @@ import (
 	"go.innotegrity.dev/errorx"
 )
 
+const (
+	// default values
+	defaultErrorAttrName = "error"
+)
+
 // errorOptionsContext is used to store an [ErrorOptions] object within a standard Go context object.
 type errorOptionsContext struct{}
 
@@ -81,4 +86,27 @@ func NewErrorRecord(ctx context.Context, level slog.Leveler, msg string, err err
 		Error:  err,
 		Record: rec,
 	}
+}
+
+// errorAttrNameContext is used to store the name of the error attribute to use in log messages.
+type errorAttrNameContext struct{}
+
+// ContextWithErrorAttrName returns a new context with the given error attribute name stored.
+//
+// If no name is supplied, the default attribute name is used instead.
+func ContextWithErrorAttrName(ctx context.Context, name string) context.Context {
+	if name == "" {
+		name = defaultErrorAttrName
+	}
+	return context.WithValue(ctx, errorAttrNameContext{}, name)
+}
+
+// ErrorAttrNameFromContext returns the attribute name to use for logging error messages.
+func ErrorAttrNameFromContext(ctx context.Context) string {
+	if v := ctx.Value(errorAttrNameContext{}); v != nil {
+		if name, ok := v.(string); ok {
+			return name
+		}
+	}
+	return defaultErrorAttrName
 }

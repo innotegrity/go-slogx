@@ -8,14 +8,56 @@ import (
 	"log/slog"
 )
 
+const (
+	// DefaultLoggerName is used if a logger is being stored in the context with no name.
+	DefaultLoggerName = "__default__"
+)
+
+// activeLoggerNameContextKey is used to store the name of the active logger in a standard Go context object if
+// there is more than one logger in the context.
+type activeLoggerNameContextKey struct{}
+
 // loggerContextKey is used to store a Logger object in a standard Go context object.
 type loggerContextKey struct {
 	name string
 }
 
+// ContextWithActiveLogger returns a new context with the given logger stored with the given name and saves
+// it as the active logger.
+//
+// If multiple loggers are associated with a context, external libraries can use ActiveLoggerFromContext()
+// to retrieve the appropriate logger to use for logging debug, error, etc. messages within their code.
+//
+// If no name is supplied, the default logger name is used.
+func ContextWithActiveLogger(ctx context.Context, l *Logger, name string) context.Context {
+	if name == "" {
+		name = DefaultLoggerName
+	}
+	return ContextWithActiveLoggerName(ContextWithLogger(ctx, l, name), name)
+}
+
+// ContextWithActiveLoggerName returns a new context with the name of the active logger set.
+//
+// If multiple loggers are associated with a context, external libraries can use ActiveLoggerNameFromContext()
+// to retrieve the appropriate logger name to then retrieve for logging debug, error, etc. messages within
+// their code.
+//
+// If no name is supplied, the default logger name is used.
+func ContextWithActiveLoggerName(ctx context.Context, name string) context.Context {
+	if name == "" {
+		name = DefaultLoggerName
+	}
+	return context.WithValue(ctx, activeLoggerNameContextKey{}, name)
+}
+
 // ContextWithLogger copies the given context and returns a new context with the given logger stored in it with
 // the given name.
+//
+// If no name is supplied, the default logger name is used.
 func ContextWithLogger(ctx context.Context, l *Logger, name string) context.Context {
+	if name == "" {
+		name = DefaultLoggerName
+	}
 	return context.WithValue(ctx, loggerContextKey{name: name}, l)
 }
 
@@ -45,6 +87,35 @@ type Logger struct {
 	IncludeFileLine bool
 }
 
+// ActiveLoggerFromContext returns the active logger from the context, if it exists.
+//
+// If multiple loggers are associated with a context, external libraries can use this function to retrieve
+// the the appropriate logger to retrieve for logging debug, error, etc. messages within their code.
+//
+// If no active logger is set in the context, the logger with the default logger name is returned. If no
+// loggers are stored at all, the default global logger is returned.
+//
+// This function should *never* return a nil logger unless for some reason the default global logger has been
+// erroneously set to nil.
+func ActiveLoggerFromContext(ctx context.Context) *Logger {
+	return LoggerFromContext(ctx, ActiveLoggerNameFromContext(ctx))
+}
+
+// ActiveLoggerNameFromContext retrieves the active logger name from the context, if it exists.
+//
+// If multiple loggers are associated with a context, external libraries can use this function to retrieve
+// the name of the appropriate logger to retrieve for logging debug, error, etc. messages within their code.
+//
+// If no active logger name is set in the context, the default logger name is returned instead.
+func ActiveLoggerNameFromContext(ctx context.Context) string {
+	if v := ctx.Value(activeLoggerNameContextKey{}); v != nil {
+		if name, ok := v.(string); ok {
+			return name
+		}
+	}
+	return DefaultLoggerName
+}
+
 // Default returns the default logger object.
 func Default() *Logger {
 	return &Logger{
@@ -54,8 +125,15 @@ func Default() *Logger {
 
 // LoggerFromContext retrieves the logger object stored in the given context with the given name, if it exists.
 //
-// If the logger cannot be found, the default logger is returned instead.
+// If no name is supplied, the default logger name is used. If no matching logger can be found, the default
+// global logger is returned instead.
+//
+// This function should *never* return a nil logger unless for some reason the default global logger has been
+// erroneously set to nil.
 func LoggerFromContext(ctx context.Context, name string) *Logger {
+	if name == "" {
+		name = DefaultLoggerName
+	}
 	if v := ctx.Value(loggerContextKey{name: name}); v != nil {
 		if l, ok := v.(*Logger); ok {
 			return l
@@ -169,6 +247,15 @@ func (l *Logger) TraceContext(ctx context.Context, msg string, args ...any) {
 // Warn logs a message using WARN level.
 func (l *Logger) Warn(msg string, args ...any) {
 	l.log(context.Background(), LevelWarn, msg, args...)
+}
+
+// With returns a new logger with the given attributes.
+func (l *Logger) With(args ...any) *Logger {
+	return &Logger{
+		Logger:           l.Logger.With(args...),
+		AdjustFrameCount: l.AdjustFrameCount,
+		IncludeFileLine:  l.IncludeFileLine,
+	}
 }
 
 // WarnContext logs a message using WARN level with context.
