@@ -36,8 +36,8 @@ type HTTPHandlerOptions struct {
 
 	// Level is the minimum log level to write to the handler.
 	//
-	// By default, the level will be set to slog.LevelInfo if not supplied.
-	Level slog.Leveler
+	// If this is nil, it defaults to slogx.LevelInfo.
+	Level *slogx.LevelVar
 
 	// RecordFormatter specifies the formatter to use to format the record before sending it to the HTTP listener.
 	//
@@ -55,7 +55,7 @@ func DefaultHTTPHandlerOptions() HTTPHandlerOptions {
 	return HTTPHandlerOptions{
 		ContentType:     "application/json",
 		HTTPClient:      resty.New(),
-		Level:           slog.LevelInfo,
+		Level:           slogx.NewLevelVar(slogx.LevelInfo),
 		RecordFormatter: formatter.DefaultJSONFormatter(),
 	}
 }
@@ -103,7 +103,7 @@ func NewHTTPHandler(opts HTTPHandlerOptions) (*httpHandler, error) {
 		opts.HTTPClient = resty.New()
 	}
 	if opts.Level == nil {
-		opts.Level = slog.LevelInfo
+		opts.Level = slogx.NewLevelVar(slogx.LevelInfo)
 	}
 
 	// create the handler
@@ -117,7 +117,7 @@ func NewHTTPHandler(opts HTTPHandlerOptions) (*httpHandler, error) {
 
 // Enabled determines whether or not the given level is enabled in this handler.
 func (h httpHandler) Enabled(ctx context.Context, level slog.Level) bool {
-	return level >= h.options.Level.Level()
+	return slogx.Level(level) >= h.options.Level.Level()
 }
 
 // Handle actually handles posting the record to the HTTP listener.
@@ -135,6 +135,11 @@ func (h *httpHandler) Handle(ctx context.Context, r slog.Record) error {
 	})
 	h.futures = append(h.futures, future)
 	return nil
+}
+
+// Level returns a pointer to the handler's level for updating.
+func (h httpHandler) Level() *slogx.LevelVar {
+	return h.options.Level
 }
 
 // Shutdown is responsible for cleaning up resources used by the handler.

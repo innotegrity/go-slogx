@@ -142,6 +142,13 @@ func LoggerFromContext(ctx context.Context, name string) *Logger {
 	return Default()
 }
 
+// Nil returns a new "nil" logger which does not log anything, ever.
+func Nil() *Logger {
+	return &Logger{
+		Logger: slog.New(newNilHandler()),
+	}
+}
+
 // Wrap simply wraps the slog.Logger in an slogx.Logger object.
 func Wrap(l *slog.Logger) *Logger {
 	return &Logger{

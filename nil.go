@@ -1,4 +1,4 @@
-package handler
+package slogx
 
 import (
 	"context"
@@ -8,8 +8,8 @@ import (
 // nilHandler simply discards all messages.
 type nilHandler struct{}
 
-// NewNilHandler creates a new handler object.
-func NewNilHandler() *nilHandler {
+// newNilHandler creates a new handler object.
+func newNilHandler() *nilHandler {
 	return &nilHandler{}
 }
 
@@ -31,12 +31,12 @@ func (h *nilHandler) Handle(ctx context.Context, r slog.Record) error {
 //
 // This function always just returns a new, default NilHandler object.
 func (h nilHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	return NewNilHandler()
+	return newNilHandler()
 }
 
 // WithGroup creates a new handler from the existing one adding the given group to it.
 //
 // This function always just returns a new, default NilHandler object.
 func (h nilHandler) WithGroup(name string) slog.Handler {
-	return NewNilHandler()
+	return newNilHandler()
 }

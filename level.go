@@ -12,8 +12,8 @@ import (
 
 // Extended log levels in addition to the standard ones.
 const (
-	LevelMin      = Level(-2147483648)
-	LevelUnknown  = LevelMin
+	LevelUnknown  = Level(-2147483648)
+	LevelMin      = Level(-2147483647)
 	LevelTrace    = Level(-8)
 	LevelDebug    = Level(slog.LevelDebug)
 	LevelInfo     = Level(slog.LevelInfo)
@@ -22,8 +22,8 @@ const (
 	LevelError    = Level(slog.LevelError)
 	LevelFatal    = Level(12)
 	LevelPanic    = Level(16)
-	LevelMax      = Level(2147483647)
-	LevelDisabled = LevelMax
+	LevelMax      = Level(2147483646)
+	LevelDisabled = Level(2147483647)
 )
 
 // Level is just an integer

@@ -4,6 +4,14 @@
 
 No unreleased changes
 
+## v0.6.1 (Released 2024-02-12)
+
+* Updated `LevelMin` to be `-2147483647` and `LevelUnknown` to be `-2147483648`
+* Updated `LevelMax` to be `2147483646` and `LevelDisabled` to be `2147483647`
+* Fixed missing `Level()` function in `HTTPHandler`
+* Fixed `Level` variable in `HTTPHandlerOptions`
+* Removed `nilHandler` and replaced with `Nil()` logger
+
 ## v0.6.0 (Released 2024-01-27)
 
 * Added `LevelUnknown` level which can be used in cases where a level cannot be determined

@@ -15,7 +15,7 @@ import (
 
 func TestHTTPHandler(t *testing.T) {
 	handler, err := handler.NewHTTPHandler(handler.HTTPHandlerOptions{
-		Level: slogx.LevelTrace,
+		Level: slogx.NewLevelVar(slogx.LevelTrace),
 		URL:   "http://localhost:8888",
 	})
 	if err != nil {
