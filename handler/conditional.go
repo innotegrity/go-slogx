@@ -15,7 +15,7 @@ type ConditionMatchesFn func(ctx context.Context, r slog.Record) bool
 // Condition defines the condition(s) which must all be true in order to log a message to the given handler.
 //
 // If no conditions are specified, the handler will always be used to log the messages.
-type condition struct {
+type Condition struct {
 	// unexported variables
 	handler    slog.Handler
 	matcherFns []ConditionMatchesFn
@@ -24,30 +24,30 @@ type condition struct {
 // NewCondition defines one or more functions to call to determine whether or not to log to the given handler.
 //
 // If no conditions are specified, the handler will always be used to log the messages.
-func NewCondition(handler slog.Handler, matcher ...ConditionMatchesFn) *condition {
-	return &condition{
+func NewCondition(handler slog.Handler, matcher ...ConditionMatchesFn) *Condition {
+	return &Condition{
 		matcherFns: matcher,
 		handler:    handler,
 	}
 }
 
 // Add simply adds one or more additional conditions to the existing condition and returns the updated object.
-func (c *condition) Add(matcher ...ConditionMatchesFn) *condition {
+func (c *Condition) Add(matcher ...ConditionMatchesFn) *Condition {
 	c.matcherFns = append(c.matcherFns, matcher...)
 	return c
 }
 
 // WithCondition adds one or more additional conditions to the existing condition and returns a new condition.
-func (c condition) WithCondition(matcher ...ConditionMatchesFn) *condition {
-	return &condition{
+func (c Condition) WithCondition(matcher ...ConditionMatchesFn) *Condition {
+	return &Condition{
 		matcherFns: append(c.matcherFns, matcher...),
 		handler:    c.handler,
 	}
 }
 
 // WithHandler updates the underlying handler and returns a new condition.
-func (c condition) WithHandler(handler slog.Handler) *condition {
-	return &condition{
+func (c Condition) WithHandler(handler slog.Handler) *Condition {
+	return &Condition{
 		matcherFns: c.matcherFns,
 		handler:    handler,
 	}
@@ -101,13 +101,13 @@ func DefaultConditionalHandlerOptions() ConditionalHandlerOptions {
 // a matching condition, the message is not logged.
 type conditionalHandler struct {
 	// unexported variables
-	conditions []*condition
+	conditions []*Condition
 	futures    []async.Future
 	options    ConditionalHandlerOptions
 }
 
 // NewConditionalHandler creates a new handler object.
-func NewConditionalHandler(opts ConditionalHandlerOptions, cond ...*condition) *conditionalHandler {
+func NewConditionalHandler(opts ConditionalHandlerOptions, cond ...*Condition) *conditionalHandler {
 	return &conditionalHandler{
 		conditions: cond,
 		futures:    []async.Future{},
@@ -153,7 +153,7 @@ func (h conditionalHandler) Shutdown(continueOnError bool) error {
 
 // WithAttrs creates a new handler from the existing one adding the given attributes to it.
 func (h conditionalHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-	conditions := []*condition{}
+	conditions := []*Condition{}
 	for _, c := range h.conditions {
 		conditions = append(conditions, NewCondition(c.handler.WithAttrs(attrs), c.matcherFns...))
 	}
@@ -164,7 +164,7 @@ func (h conditionalHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
 
 // WithGroup creates a new handler from the existing one adding the given group to it.
 func (h conditionalHandler) WithGroup(name string) slog.Handler {
-	conditions := []*condition{}
+	conditions := []*Condition{}
 	for _, c := range h.conditions {
 		conditions = append(conditions, NewCondition(c.handler.WithGroup(name), c.matcherFns...))
 	}

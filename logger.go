@@ -149,6 +149,11 @@ func Nil() *Logger {
 	}
 }
 
+// SetDefault replaces the default logger with the one supplied.
+func SetDefault(l *Logger) {
+	slog.SetDefault(l.Logger)
+}
+
 // Wrap simply wraps the slog.Logger in an slogx.Logger object.
 func Wrap(l *slog.Logger) *Logger {
 	return &Logger{

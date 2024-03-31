@@ -4,6 +4,12 @@
 
 No unreleased changes
 
+## v0.6.2 (Released 2024-03-30)
+
+* Added `ParseLevel()` function
+* Updated `condition` object to be exported as `Condition`
+* Added `SetDefault()` function
+  
 ## v0.6.1 (Released 2024-02-12)
 
 * Updated `LevelMin` to be `-2147483647` and `LevelUnknown` to be `-2147483648`
@@ -18,7 +24,7 @@ No unreleased changes
 * Replaced `LevelNone` with `LevelDisabled` and fixed value so no messages will be logged
 * Added `LevelMin` and `LevelMax` which corresponding to respective minimum and maximum level values
 * Added `NilHandler` to simply discard all messages (as an alternative to setting a handler to `LevelNone`)
-* Changed built-in handlers to use `LevelVar` for level so they can be changed dynamically
+* Updated built-in handlers to use `LevelVar` for level so they can be changed dynamically
 * Added `LevelVarHandler` interface for more easily accessing a handler's dynamic level stored in its options
 * Refactored formatter and handler option context functions
 * Added capabilities to use regular expressions for console formatter parts
@@ -34,7 +40,7 @@ No unreleased changes
   
 ## v0.3.1 (Released 2023-10-02)
 
-* Moved to requiring `go` version `1.21` or later in order to remove experimental library
+* Updated requirements to use `go` version `1.21` or later in order to remove experimental library
 * Added `Default()` function to return default logger
 
 ## v0.2.0 (Released 2023-09-25)

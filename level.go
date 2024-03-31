@@ -29,6 +29,15 @@ const (
 // Level is just an integer
 type Level int
 
+// ParseLevel parses a level string into an actual value.
+func ParseLevel(l string) (Level, error) {
+	var level Level
+	if err := level.UnmarshalText([]byte(l)); err != nil {
+		return LevelUnknown, err
+	}
+	return level, nil
+}
+
 // Level returns the level itself in order to implement the `Leveler` interface.
 func (l Level) Level() slog.Level {
 	return slog.Level(l)
