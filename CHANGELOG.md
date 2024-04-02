@@ -4,6 +4,12 @@
 
 No unreleased changes
 
+## v0.6.3 (Released 2024-04-01)
+
+* Added `LoggingService` interface to more easily swap loggers in external libraries
+* Removed `slogx`-specific context functions
+* Added `LoggingService` context functions
+
 ## v0.6.2 (Released 2024-03-30)
 
 * Added `ParseLevel()` function
